@@ -57,7 +57,8 @@ else:
 # Add project  static assets
 print '\nUploading static assets for project {}'.format(args.project)
 target_dir = os.path.join(TEMP_BUILD_DIR, args.project)
-shutil.rmtree(target_dir)
+if os.path.isdir(target_dir):
+    shutil.rmtree(target_dir)
 shutil.copytree(args.source, target_dir)
 
 
