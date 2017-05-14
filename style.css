@@ -1,0 +1,22 @@
+body {
+    font-family: 'Slabo 27px', serif;
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 1.2em;
+}
+
+ul {
+    padding: 0;
+}
+
+li {
+    list-style: none;
+    text-align: center;
+}
+
+a {
+    font-size: 22px;
+    text-decoration: none;
+}
