@@ -74,7 +74,7 @@
 
 	var _reducers2 = _interopRequireDefault(_reducers);
 
-	var _app = __webpack_require__(235);
+	var _app = __webpack_require__(236);
 
 	var _app2 = _interopRequireDefault(_app);
 
@@ -98,7 +98,7 @@
 	      ruleIdx: null
 	    }
 	  },
-	  tape: [_constants2.default.START, '1', '0', '1', '1', '0', '0', _constants2.default.BLANK],
+	  tape: [_constants2.default.START, '1', '0', '1', '1', '0', '0', _constants2.default.BLANK, _constants2.default.BLANK, _constants2.default.BLANK],
 	  program: {
 	    A: [{
 	      read: '1',
@@ -115,7 +115,7 @@
 	      next: 'B',
 	      write: _constants2.default.BLANK,
 	      move: _constants2.default.LEFT
-	    }],
+	    }, _constants2.default.BLANK_RULE],
 	    B: [{
 	      read: '1',
 	      next: 'B',
@@ -125,7 +125,8 @@
 	      read: _constants2.default.START,
 	      next: _constants2.default.ACCEPT,
 	      write: _constants2.default.START
-	    }]
+	    }, _constants2.default.BLANK_RULE],
+	    C: [_constants2.default.BLANK_RULE]
 	  }
 	};
 	var store = (0, _redux.createStore)(_reducers2.default, initialState, middleware);
@@ -25158,8 +25159,10 @@
 
 	var _machine = __webpack_require__(232);
 
+	var _program = __webpack_require__(235);
+
 	var reducer = function reducer(state, action) {
-	    return (0, _utilities.pipe)((0, _machine.machineReducer)(action))(state);
+	    return (0, _utilities.pipe)((0, _machine.machineReducer)(action), (0, _program.programReducer)(action))(state);
 	};
 
 	module.exports = reducer;
@@ -25239,11 +25242,11 @@
 	    return e.read;
 	  }).indexOf(tapeValue);
 	  var noMatchFound = ruleIdx === -1;
-	  if (noMatchFound || program[match.node][ruleIdx].next === _constants2.default.ACCEPT || program[match.node][ruleIdx].next === _constants2.default.REJECT) {
+	  if (noMatchFound || program[match.node][ruleIdx].next === _constants2.default.ACCEPT || program[match.node][ruleIdx].next === _constants2.default.REJECT || program[match.node][ruleIdx].next === _constants2.default.BLANK) {
 	    // Halt the machine
 	    return _extends({}, state, {
 	      machine: _extends({}, machine, {
-	        state: program[match.node][ruleIdx].next === _constants2.default.ACCEPT ? _constants2.default.ACCEPT : _constants2.default.REJECT,
+	        state: !noMatchFound && program[match.node][ruleIdx].next === _constants2.default.ACCEPT ? _constants2.default.ACCEPT : _constants2.default.REJECT,
 	        match: {
 	          node: match.node || null,
 	          ruleIdx: ruleIdx >= 0 ? ruleIdx : null
@@ -25290,7 +25293,6 @@
 	var resetMachine = function resetMachine(action, state) {
 	  return _extends({}, state, {
 	    machine: {
-	      state: _constants2.default.VIRGIN,
 	      head: _constants2.default.HEAD_START,
 	      match: {
 	        node: _constants2.default.INIT,
@@ -25331,12 +25333,22 @@
 	  FIND_MATCH: 'FIND_MATCH',
 	  APPLY_MATCH: 'APPLY_MATCH',
 	  SET_TAPE: 'SET_TAPE',
-	  RESET_MACHINE: 'RESET_MACHINE'
+	  RESET_MACHINE: 'RESET_MACHINE',
+	  UPDATE_PROGRAM: 'UPDATE_PROGRAM',
+	  ADD_NODE: 'ADD_NODE' };
+
+	var updateProgram = function updateProgram(nodeName, ruleIdx, newRule) {
+	  return {
+	    type: types.UPDATE_PROGRAM,
+	    nodeName: nodeName,
+	    ruleIdx: ruleIdx,
+	    newRule: newRule
+	  };
 	};
 
 	var startMachine = function startMachine() {
 	  return function (dispatch, getState) {
-	    var intervalTime = 300; // ms
+	    var intervalTime = 500; // ms
 	    var intervalId = void 0;
 
 	    dispatch({ type: types.RESET_MACHINE });
@@ -25370,7 +25382,8 @@
 	module.exports = {
 	  types: types,
 	  startMachine: startMachine,
-	  setTape: setTape
+	  setTape: setTape,
+	  updateProgram: updateProgram
 	};
 
 /***/ }),
@@ -25380,27 +25393,102 @@
 	'use strict';
 
 	module.exports = {
-	  NODE_NAMES: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'],
+	    NODE_NAMES: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'],
+	    BLANK_RULE: {
+	        read: ' ', // CONST.BLANK
+	        next: ' ',
+	        write: ' ',
+	        move: ' '
+	    },
 
-	  // Machine states
-	  VIRGIN: 'VIRGIN',
-	  RUNNING: 'RUNNING',
-	  ACCEPT: 'ACCEPT',
-	  REJECT: 'REJECT',
+	    // Machine states
+	    VIRGIN: 'VIRGIN',
+	    RUNNING: 'RUNNING',
+	    ACCEPT: 'ACCEPT',
+	    REJECT: 'REJECT',
 
-	  // Tape / instruction values
-	  BLANK: ' ',
-	  START: '#',
-	  LEFT: 'LEFT',
-	  RIGHT: 'RIGHT',
+	    // Tape / instruction values
+	    BLANK: ' ',
+	    START: '#',
+	    LEFT: 'LEFT',
+	    RIGHT: 'RIGHT',
 
-	  // Initial state
-	  HEAD_START: 1,
-	  INIT: 'A'
+	    // Initial state
+	    HEAD_START: 1,
+	    INIT: 'A'
 	};
 
 /***/ }),
 /* 235 */
+/***/ (function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.programReducer = undefined;
+
+	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+	var _actions = __webpack_require__(233);
+
+	var _constants = __webpack_require__(234);
+
+	var _constants2 = _interopRequireDefault(_constants);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	var programReducer = exports.programReducer = function programReducer(action) {
+	  return function (state) {
+	    switch (action.type) {
+	      case _actions.types.UPDATE_PROGRAM:
+	        return updateProgram(action, state);
+	      default:
+	        return _extends({}, state);
+	    }
+	  };
+	};
+
+	var updateProgram = function updateProgram(action, state) {
+
+	  // Ensure that there is always a blank node
+	  var nodeNames = Object.keys(state.program);
+	  var lastNodeName = Object.keys(state.program).sort().pop();
+	  var newNodeName = getNewNodeName(lastNodeName);
+
+	  return _extends({}, state, {
+	    program: nodeNames.reduce(function (program, nodeName) {
+
+	      // Update the changed rule
+	      if (nodeName === action.nodeName) {
+	        program[nodeName] = state.program[nodeName].map(function (rule, idx) {
+	          return idx === action.ruleIdx ? action.newRule : rule;
+	        });
+	      } else {
+	        program[nodeName] = state.program[nodeName];
+	      }
+
+	      // Ensure that there is always a blank rule for each node
+	      var lastRule = program[nodeName][program[nodeName].length - 1];
+	      if (lastRule.next !== _constants2.default.BLANK && lastRule.move !== _constants2.default.BLANK) {
+	        program[nodeName] = program[nodeName].concat(_constants2.default.BLANK_RULE);
+	      }
+
+	      return program;
+	    }, {})
+	  });
+	};
+
+	var getNewNodeName = function getNewNodeName(lastNodeName) {
+	  if (lastNodeName === _constants2.default.NODE_NAMES[_constants2.default.NODE_NAMES.length - 1]) {
+	    throw new Error("Too many nodes! We ran out of letters!");
+	  }
+	  return _constants2.default.NODE_NAMES[_constants2.default.NODE_NAMES.indexOf(lastNodeName) + 1];
+	};
+
+/***/ }),
+/* 236 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -25417,19 +25505,19 @@
 
 	var _actions2 = _interopRequireDefault(_actions);
 
-	var _dashboard = __webpack_require__(236);
+	var _dashboard = __webpack_require__(237);
 
 	var _dashboard2 = _interopRequireDefault(_dashboard);
 
-	var _tape = __webpack_require__(238);
+	var _tape = __webpack_require__(239);
 
 	var _tape2 = _interopRequireDefault(_tape);
 
-	var _program = __webpack_require__(243);
+	var _program = __webpack_require__(244);
 
 	var _program2 = _interopRequireDefault(_program);
 
-	var _app = __webpack_require__(244);
+	var _app = __webpack_require__(246);
 
 	var _app2 = _interopRequireDefault(_app);
 
@@ -25453,31 +25541,25 @@
 	  _createClass(App, [{
 	    key: 'render',
 	    value: function render() {
-	      var _props = this.props,
-	          machine = _props.machine,
-	          tape = _props.tape,
-	          program = _props.program,
-	          startMachine = _props.startMachine,
-	          setTape = _props.setTape;
-
 	      return _react2.default.createElement(
 	        'div',
 	        { className: _app2.default.appContainer },
-	        _react2.default.createElement(_dashboard2.default, {
-	          startMachine: startMachine,
-	          machine: machine
-	        }),
 	        _react2.default.createElement(
 	          'div',
 	          { className: _app2.default.appContent },
 	          _react2.default.createElement(_tape2.default, {
-	            setTape: setTape,
-	            tape: tape,
-	            machine: machine
+	            setTape: this.props.setTape,
+	            tape: this.props.tape,
+	            machine: this.props.machine
 	          }),
 	          _react2.default.createElement(_program2.default, {
-	            program: program,
-	            machine: machine
+	            program: this.props.program,
+	            machine: this.props.machine,
+	            updateProgram: this.props.updateProgram
+	          }),
+	          _react2.default.createElement(_dashboard2.default, {
+	            startMachine: this.props.startMachine,
+	            machine: this.props.machine
 	          })
 	        )
 	      );
@@ -25502,6 +25584,9 @@
 	    },
 	    setTape: function setTape(idx, val) {
 	      return dispatch(_actions2.default.setTape(idx, val));
+	    },
+	    updateProgram: function updateProgram(nodeName, ruleIdx, newRule) {
+	      return dispatch(_actions2.default.updateProgram(nodeName, ruleIdx, newRule));
 	    }
 	  };
 	};
@@ -25509,7 +25594,7 @@
 	module.exports = (0, _reactRedux.connect)(mapStateToProps, mapDispatchToProps)(App);
 
 /***/ }),
-/* 236 */
+/* 237 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -25524,7 +25609,7 @@
 
 	var _propTypes2 = _interopRequireDefault(_propTypes);
 
-	var _dashboard = __webpack_require__(237);
+	var _dashboard = __webpack_require__(238);
 
 	var _dashboard2 = _interopRequireDefault(_dashboard);
 
@@ -25575,14 +25660,17 @@
 	    value: function render() {
 	      var _props = this.props,
 	          startMachine = _props.startMachine,
-	          running = _props.running;
+	          machine = _props.machine;
 
 	      return _react2.default.createElement(
 	        'div',
 	        { className: _dashboard2.default.dashboardContainer },
 	        _react2.default.createElement(
 	          'button',
-	          { disabled: running, onClick: startMachine },
+	          {
+	            disabled: machine.state === _constants2.default.RUNNING,
+	            onClick: startMachine
+	          },
 	          'Start'
 	        ),
 	        _react2.default.createElement(
@@ -25608,14 +25696,14 @@
 	module.exports = Dashboard;
 
 /***/ }),
-/* 237 */
+/* 238 */
 /***/ (function(module, exports) {
 
 	// removed by extract-text-webpack-plugin
 	module.exports = {"dashboardContainer":"dashboard__dashboardContainer"};
 
 /***/ }),
-/* 238 */
+/* 239 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -25634,15 +25722,11 @@
 
 	var _constants2 = _interopRequireDefault(_constants);
 
-	var _tape = __webpack_require__(239);
+	var _tape = __webpack_require__(240);
 
 	var _tape2 = _interopRequireDefault(_tape);
 
-	var _starO = __webpack_require__(240);
-
-	var _starO2 = _interopRequireDefault(_starO);
-
-	var _arrowDropUp = __webpack_require__(242);
+	var _arrowDropUp = __webpack_require__(243);
 
 	var _arrowDropUp2 = _interopRequireDefault(_arrowDropUp);
 
@@ -25707,7 +25791,7 @@
 	                onChange: function onChange() {},
 	                maxLength: '1',
 	                className: _tape2.default.entry,
-	                onKeyDown: _this2.handleKeyDown(idx),
+	                onKeyPress: _this2.handleKeyDown(idx),
 	                onFocus: _this2.handleFocus,
 	                value: tape[idx]
 	              }),
@@ -25734,51 +25818,15 @@
 	module.exports = Tape;
 
 /***/ }),
-/* 239 */
+/* 240 */
 /***/ (function(module, exports) {
 
 	// removed by extract-text-webpack-plugin
 	module.exports = {"status":"tape__status","tapeContainer":"tape__tapeContainer","_entry":"tape___entry","start":"tape__start","entry":"tape__entry","entryContainer":"tape__entryContainer","head":"tape__head"};
 
 /***/ }),
-/* 240 */
-/***/ (function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-	    value: true
-	});
-
-	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
-	var _react = __webpack_require__(2);
-
-	var _react2 = _interopRequireDefault(_react);
-
-	var _reactIconBase = __webpack_require__(241);
-
-	var _reactIconBase2 = _interopRequireDefault(_reactIconBase);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	var FaStarO = function FaStarO(props) {
-	    return _react2.default.createElement(
-	        _reactIconBase2.default,
-	        _extends({ viewBox: '0 0 40 40' }, props),
-	        _react2.default.createElement(
-	            'g',
-	            null,
-	            _react2.default.createElement('path', { d: 'm26.9 22.4l6.8-6.6-9.4-1.4-4.2-8.5-4.2 8.5-9.5 1.4 6.9 6.6-1.7 9.4 8.5-4.4 8.4 4.4z m11.7-8q0 0.5-0.5 1.1l-8.1 7.9 1.9 11.2q0 0.1 0 0.4 0 1.1-0.9 1.1-0.4 0-0.9-0.2l-10-5.3-10 5.3q-0.5 0.2-0.9 0.2-0.5 0-0.7-0.3t-0.3-0.8q0-0.1 0.1-0.4l1.9-11.2-8.1-7.9q-0.6-0.6-0.6-1.1 0-0.8 1.3-1l11.2-1.6 5-10.2q0.4-0.9 1.1-0.9t1.1 0.9l5 10.2 11.2 1.6q1.2 0.2 1.2 1z' })
-	        )
-	    );
-	};
-
-	exports.default = FaStarO;
-	module.exports = exports['default'];
-
-/***/ }),
-/* 241 */
+/* 241 */,
+/* 242 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -25839,7 +25887,7 @@
 	module.exports = exports['default'];
 
 /***/ }),
-/* 242 */
+/* 243 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -25854,7 +25902,7 @@
 
 	var _react2 = _interopRequireDefault(_react);
 
-	var _reactIconBase = __webpack_require__(241);
+	var _reactIconBase = __webpack_require__(242);
 
 	var _reactIconBase2 = _interopRequireDefault(_reactIconBase);
 
@@ -25876,10 +25924,12 @@
 	module.exports = exports['default'];
 
 /***/ }),
-/* 243 */
+/* 244 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
+
+	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
@@ -25894,6 +25944,10 @@
 	var _program = __webpack_require__(245);
 
 	var _program2 = _interopRequireDefault(_program);
+
+	var _constants = __webpack_require__(234);
+
+	var _constants2 = _interopRequireDefault(_constants);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -25924,6 +25978,35 @@
 	      var isActiveNode = _this.props.machine.match.node === nodeName;
 	      var isActiveRule = _this.props.machine.match.ruleIdx === ruleIdx;
 	      return className + ' ' + (isActiveNode && isActiveRule ? _program2.default.active : '');
+	    }, _this.handleSelect = function (operation, ruleIdx, nodeName) {
+	      return function (e) {
+	        var newRule = void 0;
+	        switch (operation) {
+	          case 'READ':
+	            newRule = _extends({}, _this.props.program[nodeName][ruleIdx], {
+	              read: e.target.value
+	            });
+	            break;
+	          case 'WRITE':
+	            newRule = _extends({}, _this.props.program[nodeName][ruleIdx], {
+	              write: e.target.value
+	            });
+	            break;
+	          case 'MOVE':
+	            newRule = _extends({}, _this.props.program[nodeName][ruleIdx], {
+	              move: e.target.value
+	            });
+	            break;
+	          case 'NEXT':
+	            newRule = _extends({}, _this.props.program[nodeName][ruleIdx], {
+	              next: e.target.value
+	            });
+	            break;
+	          default:
+	            return;
+	        }
+	        _this.props.updateProgram(nodeName, ruleIdx, newRule);
+	      };
 	    }, _temp), _possibleConstructorReturn(_this, _ret);
 	  }
 
@@ -25937,11 +26020,6 @@
 	      return _react2.default.createElement(
 	        'div',
 	        null,
-	        _react2.default.createElement(
-	          'h1',
-	          null,
-	          'Program'
-	        ),
 	        _react2.default.createElement(
 	          'div',
 	          { className: _program2.default.node },
@@ -26000,7 +26078,10 @@
 	                    null,
 	                    _react2.default.createElement(
 	                      'select',
-	                      { defaultValue: rule.read },
+	                      {
+	                        onChange: _this2.handleSelect('READ', idx, nodeName),
+	                        defaultValue: rule.read
+	                      },
 	                      _react2.default.createElement(
 	                        'option',
 	                        { value: '0' },
@@ -26015,6 +26096,11 @@
 	                        'option',
 	                        { value: '#' },
 	                        '#'
+	                      ),
+	                      _react2.default.createElement(
+	                        'option',
+	                        { value: _constants2.default.BLANK },
+	                        _constants2.default.BLANK
 	                      )
 	                    )
 	                  ),
@@ -26023,7 +26109,10 @@
 	                    null,
 	                    _react2.default.createElement(
 	                      'select',
-	                      { defaultValue: rule.write },
+	                      {
+	                        onChange: _this2.handleSelect('WRITE', idx, nodeName),
+	                        defaultValue: rule.write
+	                      },
 	                      _react2.default.createElement(
 	                        'option',
 	                        { value: '0' },
@@ -26038,6 +26127,11 @@
 	                        'option',
 	                        { value: '#' },
 	                        '#'
+	                      ),
+	                      _react2.default.createElement(
+	                        'option',
+	                        { value: _constants2.default.BLANK },
+	                        _constants2.default.BLANK
 	                      )
 	                    )
 	                  ),
@@ -26046,7 +26140,10 @@
 	                    null,
 	                    _react2.default.createElement(
 	                      'select',
-	                      { defaultValue: rule.move },
+	                      {
+	                        onChange: _this2.handleSelect('MOVE', idx, nodeName),
+	                        defaultValue: rule.move
+	                      },
 	                      _react2.default.createElement(
 	                        'option',
 	                        { value: 'RIGHT' },
@@ -26057,7 +26154,11 @@
 	                        { value: 'LEFT' },
 	                        'LEFT'
 	                      ),
-	                      _react2.default.createElement('option', { value: '' })
+	                      _react2.default.createElement(
+	                        'option',
+	                        { value: _constants2.default.BLANK },
+	                        _constants2.default.BLANK
+	                      )
 	                    )
 	                  ),
 	                  _react2.default.createElement(
@@ -26065,22 +26166,17 @@
 	                    null,
 	                    _react2.default.createElement(
 	                      'select',
-	                      { defaultValue: rule.next },
-	                      _react2.default.createElement(
-	                        'option',
-	                        { value: 'A' },
-	                        'A'
-	                      ),
-	                      _react2.default.createElement(
-	                        'option',
-	                        { value: 'B' },
-	                        'B'
-	                      ),
-	                      _react2.default.createElement(
-	                        'option',
-	                        { value: 'ACCEPT' },
-	                        'ACCEPT'
-	                      )
+	                      {
+	                        onChange: _this2.handleSelect('NEXT', idx, nodeName),
+	                        defaultValue: rule.next
+	                      },
+	                      Object.keys(program).concat(['ACCEPT', _constants2.default.BLANK]).map(function (_nodeName, _idx) {
+	                        return _react2.default.createElement(
+	                          'option',
+	                          { key: _idx, value: _nodeName },
+	                          _nodeName
+	                        );
+	                      })
 	                    )
 	                  )
 	                );
@@ -26102,17 +26198,12 @@
 	      node: _propTypes2.default.string,
 	      ruleIdx: _propTypes2.default.number
 	    }).isRequired
-	  }).isRequired
+	  }).isRequired,
+	  updateProgram: _propTypes2.default.func
 	};
 
 
 	module.exports = Program;
-
-/***/ }),
-/* 244 */
-/***/ (function(module, exports) {
-
-	// removed by extract-text-webpack-plugin
 
 /***/ }),
 /* 245 */
@@ -26120,6 +26211,13 @@
 
 	// removed by extract-text-webpack-plugin
 	module.exports = {"node":"program__node","_nodeHeader":"program___nodeHeader","topHeader":"program__topHeader","nodeHeader":"program__nodeHeader","active":"program__active","nodeRules":"program__nodeRules","rule":"program__rule","header":"program__header"};
+
+/***/ }),
+/* 246 */
+/***/ (function(module, exports) {
+
+	// removed by extract-text-webpack-plugin
+	module.exports = {"appContent":"app__appContent"};
 
 /***/ })
 /******/ ]);
