@@ -82,6 +82,10 @@
 
 	var _constants2 = _interopRequireDefault(_constants);
 
+	var _programs = __webpack_require__(239);
+
+	var _programs2 = _interopRequireDefault(_programs);
+
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	// Middleware
@@ -98,36 +102,8 @@
 	      ruleIdx: null
 	    }
 	  },
-	  tape: [_constants2.default.START, '1', '0', '1', '1', '0', '0', _constants2.default.BLANK, _constants2.default.BLANK, _constants2.default.BLANK],
-	  program: {
-	    A: [{
-	      read: '1',
-	      next: _constants2.default.INIT,
-	      write: '1',
-	      move: _constants2.default.RIGHT
-	    }, {
-	      read: '0',
-	      next: _constants2.default.INIT,
-	      write: '1',
-	      move: _constants2.default.LEFT
-	    }, {
-	      read: _constants2.default.BLANK,
-	      next: 'B',
-	      write: _constants2.default.BLANK,
-	      move: _constants2.default.LEFT
-	    }, _constants2.default.BLANK_RULE],
-	    B: [{
-	      read: '1',
-	      next: 'B',
-	      write: '1',
-	      move: _constants2.default.LEFT
-	    }, {
-	      read: _constants2.default.START,
-	      next: _constants2.default.ACCEPT,
-	      write: _constants2.default.START
-	    }, _constants2.default.BLANK_RULE],
-	    C: [_constants2.default.BLANK_RULE]
-	  }
+	  tape: _programs2.default[0].tape,
+	  program: _programs2.default[0].program
 	};
 	var store = (0, _redux.createStore)(_reducers2.default, initialState, middleware);
 
@@ -25292,13 +25268,13 @@
 
 	var resetMachine = function resetMachine(action, state) {
 	  return _extends({}, state, {
-	    machine: {
+	    machine: _extends({}, state.machine, {
 	      head: _constants2.default.HEAD_START,
 	      match: {
 	        node: _constants2.default.INIT,
 	        ruleIdx: null
 	      }
-	    }
+	    })
 	  });
 	};
 
@@ -25335,7 +25311,16 @@
 	  SET_TAPE: 'SET_TAPE',
 	  RESET_MACHINE: 'RESET_MACHINE',
 	  UPDATE_PROGRAM: 'UPDATE_PROGRAM',
-	  ADD_NODE: 'ADD_NODE' };
+	  LOAD_PROGRAM: 'LOAD_PROGRAM'
+	};
+
+	var loadProgram = function loadProgram(program, tape) {
+	  return {
+	    type: types.LOAD_PROGRAM,
+	    program: program,
+	    tape: tape
+	  };
+	};
 
 	var updateProgram = function updateProgram(nodeName, ruleIdx, newRule) {
 	  return {
@@ -25348,7 +25333,7 @@
 
 	var startMachine = function startMachine() {
 	  return function (dispatch, getState) {
-	    var intervalTime = 500; // ms
+	    var intervalTime = 100; // ms
 	    var intervalId = void 0;
 
 	    dispatch({ type: types.RESET_MACHINE });
@@ -25383,6 +25368,7 @@
 	  types: types,
 	  startMachine: startMachine,
 	  setTape: setTape,
+	  loadProgram: loadProgram,
 	  updateProgram: updateProgram
 	};
 
@@ -25444,40 +25430,61 @@
 	    switch (action.type) {
 	      case _actions.types.UPDATE_PROGRAM:
 	        return updateProgram(action, state);
+	      case _actions.types.LOAD_PROGRAM:
+	        return loadProgram(action, state);
 	      default:
 	        return _extends({}, state);
 	    }
 	  };
 	};
 
-	var updateProgram = function updateProgram(action, state) {
+	var loadProgram = function loadProgram(action, state) {
+	  return _extends({}, state, {
+	    machine: _extends({}, state.machine, {
+	      state: _constants2.default.VIRGIN
+	    }),
+	    program: action.program,
+	    tape: action.tape
+	  });
+	};
 
-	  // Ensure that there is always a blank node
+	var updateProgram = function updateProgram(action, state) {
 	  var nodeNames = Object.keys(state.program);
-	  var lastNodeName = Object.keys(state.program).sort().pop();
-	  var newNodeName = getNewNodeName(lastNodeName);
+	  var newProgram = nodeNames.reduce(function (program, nodeName) {
+	    // Update the changed rule
+	    if (nodeName === action.nodeName) {
+	      program[nodeName] = state.program[nodeName].map(function (rule, idx) {
+	        return idx === action.ruleIdx ? action.newRule : rule;
+	      });
+	    } else {
+	      program[nodeName] = state.program[nodeName];
+	    }
+
+	    // Ensure that there is always a blank rule for each node
+	    var lastRule = program[nodeName].slice(-1)[0];
+	    if (!isRuleBlank(lastRule)) {
+	      program[nodeName] = program[nodeName].concat(_constants2.default.BLANK_RULE);
+	    }
+	    return program;
+	  }, {});
+
+	  // Ensure that there is always a blank node at the end
+	  var lastNodeName = nodeNames.sort().slice(-1)[0];
+	  var allRulesBlank = newProgram[lastNodeName].reduce(function (bool, rule) {
+	    return bool && isRuleBlank(rule);
+	  }, true);
+
+	  if (!allRulesBlank) {
+	    newProgram[getNewNodeName(lastNodeName)] = [_constants2.default.BLANK_RULE];
+	  }
 
 	  return _extends({}, state, {
-	    program: nodeNames.reduce(function (program, nodeName) {
-
-	      // Update the changed rule
-	      if (nodeName === action.nodeName) {
-	        program[nodeName] = state.program[nodeName].map(function (rule, idx) {
-	          return idx === action.ruleIdx ? action.newRule : rule;
-	        });
-	      } else {
-	        program[nodeName] = state.program[nodeName];
-	      }
-
-	      // Ensure that there is always a blank rule for each node
-	      var lastRule = program[nodeName][program[nodeName].length - 1];
-	      if (lastRule.next !== _constants2.default.BLANK && lastRule.move !== _constants2.default.BLANK) {
-	        program[nodeName] = program[nodeName].concat(_constants2.default.BLANK_RULE);
-	      }
-
-	      return program;
-	    }, {})
+	    program: newProgram
 	  });
+	};
+
+	var isRuleBlank = function isRuleBlank(rule) {
+	  return rule.next === _constants2.default.BLANK && rule.move === _constants2.default.BLANK;
 	};
 
 	var getNewNodeName = function getNewNodeName(lastNodeName) {
@@ -25509,7 +25516,7 @@
 
 	var _dashboard2 = _interopRequireDefault(_dashboard);
 
-	var _tape = __webpack_require__(239);
+	var _tape = __webpack_require__(240);
 
 	var _tape2 = _interopRequireDefault(_tape);
 
@@ -25544,6 +25551,11 @@
 	      return _react2.default.createElement(
 	        'div',
 	        { className: _app2.default.appContainer },
+	        _react2.default.createElement(_dashboard2.default, {
+	          startMachine: this.props.startMachine,
+	          loadProgram: this.props.loadProgram,
+	          machine: this.props.machine
+	        }),
 	        _react2.default.createElement(
 	          'div',
 	          { className: _app2.default.appContent },
@@ -25556,10 +25568,6 @@
 	            program: this.props.program,
 	            machine: this.props.machine,
 	            updateProgram: this.props.updateProgram
-	          }),
-	          _react2.default.createElement(_dashboard2.default, {
-	            startMachine: this.props.startMachine,
-	            machine: this.props.machine
 	          })
 	        )
 	      );
@@ -25584,6 +25592,9 @@
 	    },
 	    setTape: function setTape(idx, val) {
 	      return dispatch(_actions2.default.setTape(idx, val));
+	    },
+	    loadProgram: function loadProgram(program, tape) {
+	      return dispatch(_actions2.default.loadProgram(program, tape));
 	    },
 	    updateProgram: function updateProgram(nodeName, ruleIdx, newRule) {
 	      return dispatch(_actions2.default.updateProgram(nodeName, ruleIdx, newRule));
@@ -25617,6 +25628,10 @@
 
 	var _constants2 = _interopRequireDefault(_constants);
 
+	var _programs = __webpack_require__(239);
+
+	var _programs2 = _interopRequireDefault(_programs);
+
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -25646,11 +25661,11 @@
 	        case _constants2.default.RUNNING:
 	          return 'RUNNING';
 	        case _constants2.default.ACCEPT:
-	          return 'ACCEPT';
+	          return 'ACCEPTED';
 	        case _constants2.default.REJECT:
-	          return 'REJECT';
+	          return 'REJECTED';
 	        default:
-	          return '';
+	          return 'HALTED';
 	      }
 	    }, _temp), _possibleConstructorReturn(_this, _ret);
 	  }
@@ -25660,24 +25675,50 @@
 	    value: function render() {
 	      var _props = this.props,
 	          startMachine = _props.startMachine,
+	          loadProgram = _props.loadProgram,
 	          machine = _props.machine;
+
+	      var button = function button(text, clickHandler) {
+	        return _react2.default.createElement(
+	          'button',
+	          {
+	            className: _dashboard2.default.button,
+	            disabled: machine.state === _constants2.default.RUNNING,
+	            onClick: clickHandler
+	          },
+	          text
+	        );
+	      };
 
 	      return _react2.default.createElement(
 	        'div',
 	        { className: _dashboard2.default.dashboardContainer },
+	        button('Start', startMachine),
 	        _react2.default.createElement(
-	          'button',
-	          {
-	            disabled: machine.state === _constants2.default.RUNNING,
-	            onClick: startMachine
-	          },
-	          'Start'
-	        ),
-	        _react2.default.createElement(
-	          'h3',
-	          { className: _dashboard2.default.status },
+	          'h4',
+	          null,
+	          'STATUS: ',
 	          this.getStatus()
-	        )
+	        ),
+	        _programs2.default.map(function (p, idx) {
+	          return _react2.default.createElement(
+	            'div',
+	            { key: idx, className: _dashboard2.default.savedProgram },
+	            _react2.default.createElement(
+	              'h4',
+	              null,
+	              p.title
+	            ),
+	            _react2.default.createElement(
+	              'p',
+	              null,
+	              p.description
+	            ),
+	            button('Load', function () {
+	              return loadProgram(p.program, p.tape);
+	            })
+	          );
+	        })
 	      );
 	    }
 	  }]);
@@ -25686,7 +25727,8 @@
 	}(_react.Component);
 
 	Dashboard.propTypes = {
-	  startMachine: _propTypes2.default.func,
+	  startMachine: _propTypes2.default.func.isRequired,
+	  loadProgram: _propTypes2.default.func.isRequired,
 	  machine: _propTypes2.default.shape({
 	    state: _propTypes2.default.string
 	  }).isRequired
@@ -25700,10 +25742,108 @@
 /***/ (function(module, exports) {
 
 	// removed by extract-text-webpack-plugin
-	module.exports = {"dashboardContainer":"dashboard__dashboardContainer"};
+	module.exports = {"dashboardContainer":"dashboard__dashboardContainer","button":"dashboard__button","savedProgram":"dashboard__savedProgram"};
 
 /***/ }),
 /* 239 */
+/***/ (function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var _constants = __webpack_require__(234);
+
+	var _constants2 = _interopRequireDefault(_constants);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	var programs = [{
+	  title: 'Blank Program',
+	  description: 'Does nothing',
+	  tape: [_constants2.default.START, '0', '1', _constants2.default.BLANK, _constants2.default.BLANK, _constants2.default.BLANK],
+	  program: {
+	    A: [_constants2.default.BLANK_RULE]
+	  }
+	}, {
+	  title: 'Buggy Program',
+	  description: 'Writes 1s forever.',
+	  tape: [_constants2.default.START, '0', '1', _constants2.default.BLANK, _constants2.default.BLANK, _constants2.default.BLANK],
+	  program: {
+	    A: [{ read: '0', write: '1', move: _constants2.default.RIGHT, next: 'A' }, { read: '1', write: '1', move: _constants2.default.RIGHT, next: 'A' }, { read: ' ', write: '1', move: _constants2.default.RIGHT, next: 'A' }]
+	  }
+	}, {
+	  title: '0x1x Checker',
+	  description: 'Accepts a string of 0x1x Eg. 000111',
+	  tape: [_constants2.default.START, '0', '0', '0', '1', '1', '1', _constants2.default.BLANK, _constants2.default.BLANK],
+	  program: {
+	    A: [
+	    // Mark a 0 as 'read' then go to B so we can find a matching 1
+	    { read: '0', write: '!', move: _constants2.default.RIGHT, next: 'B' }],
+	    B: [
+	    // Move right until we see a 1, then mark it as 'read'
+	    // Then go to C so we can traverse left
+	    { read: '0', write: '0', move: _constants2.default.RIGHT, next: 'B' }, { read: '$', write: '$', move: _constants2.default.RIGHT, next: 'B' }, { read: '1', write: '$', move: _constants2.default.RIGHT, next: 'C' }],
+	    C: [
+	    // If we see a space we should be finished marking things
+	    // Otherwise traverse left
+	    // Once see a '!' then we are at the leftmost marked 0
+	    // and we should start matching 0-1 pairs again
+	    { read: '1', write: '1', move: _constants2.default.LEFT, next: 'C' }, { read: '$', write: '$', move: _constants2.default.LEFT, next: 'C' }, { read: '0', write: '0', move: _constants2.default.LEFT, next: 'C' }, { read: '!', write: '!', move: _constants2.default.RIGHT, next: 'A' }, { read: ' ', write: ' ', move: _constants2.default.LEFT, next: 'D' }],
+	    D: [
+	    // Verify that everything is marked and then accept
+	    { read: '$', write: '$', move: _constants2.default.LEFT, next: 'D' }, { read: '!', write: '!', move: _constants2.default.LEFT, next: 'D' }, { read: '#', write: ' ', move: ' ', next: 'ACCEPT' }]
+	  }
+	}, {
+	  title: '0x1x0x Checker',
+	  description: 'Accepts a string of 0x1x0x Eg. 001100',
+	  tape: [_constants2.default.START, '0', '0', '1', '1', '0', '0', _constants2.default.BLANK, _constants2.default.BLANK],
+	  program: {
+	    A: [
+	    // Do same matching algorithm as in 0x1x checker
+	    // in stage 1, then in stage 2 match the 2nd set of 0s
+	    // Mark a 0 as 'read' then go to B so we can find a matching 1
+	    { read: '0', write: '!', move: _constants2.default.RIGHT, next: 'B' }],
+	    B: [
+	    // Move right until we see a 1, then mark it as 'read'
+	    // Then go to C so we can traverse left
+	    { read: '0', write: '0', move: _constants2.default.RIGHT, next: 'B' }, { read: '$', write: '$', move: _constants2.default.RIGHT, next: 'B' }, { read: '1', write: '$', move: _constants2.default.RIGHT, next: 'C' }],
+	    C: [
+	    // We have just marked a '1' as matched
+	    // If we see another 1 then we have more matching to do
+	    // If we see a 0 then we should move to stage 2
+	    { read: '1', write: '1', move: _constants2.default.LEFT, next: 'D' }, { read: '0', write: '0', move: _constants2.default.LEFT, next: 'E' }],
+	    D: [{ read: '1', write: '1', move: _constants2.default.LEFT, next: 'D' }, { read: '$', write: '$', move: _constants2.default.LEFT, next: 'D' }, { read: '0', write: '0', move: _constants2.default.LEFT, next: 'D' }, { read: '!', write: '!', move: _constants2.default.RIGHT, next: 'A' }],
+	    E: [
+	    // Verify that the first set of 0s is matched with the 2nd set
+	    // then move to stage 2
+	    { read: '$', write: '$', move: _constants2.default.LEFT, next: 'E' }, { read: '!', write: '!', move: _constants2.default.LEFT, next: 'E' }, { read: '#', write: ' ', move: _constants2.default.RIGHT, next: 'F' }],
+	    F: [
+	    // Begin stage 2 - tape should read !!!$$$000
+	    // traverse right until we hit a '$'
+	    { read: '!', write: '!', move: _constants2.default.RIGHT, next: 'F' }, { read: '$', write: '$', move: _constants2.default.LEFT, next: 'G' }],
+	    G: [
+	    // We have hit a '$' - beging matching $s with 0s
+	    // mark $ as read by writing it as !
+	    { read: '!', write: '!', move: _constants2.default.RIGHT, next: 'G' }, { read: '$', write: '!', move: _constants2.default.RIGHT, next: 'H' }],
+	    H: [
+	    // Move right until we see a 0, then mark it as read with &
+	    { read: '$', write: '$', move: _constants2.default.RIGHT, next: 'H' }, { read: '!', write: '!', move: _constants2.default.RIGHT, next: 'H' }, { read: '&', write: '&', move: _constants2.default.RIGHT, next: 'H' }, { read: '0', write: '&', move: _constants2.default.RIGHT, next: 'I' }],
+	    I: [
+	    // If we see a blank then verify
+	    // If we see a ! then beging matching again 
+	    { read: '0', write: '0', move: _constants2.default.LEFT, next: 'I' }, { read: '&', write: '&', move: _constants2.default.LEFT, next: 'I' }, { read: '$', write: '$', move: _constants2.default.LEFT, next: 'I' }, { read: '!', write: '!', move: _constants2.default.RIGHT, next: 'G' }, { read: ' ', write: ' ', move: _constants2.default.LEFT, next: 'J' }],
+	    J: [
+	    // Verify that everything is marked as &s and !s 
+	    /// and then accept
+	    { read: '&', write: '&', move: _constants2.default.LEFT, next: 'J' }, { read: '!', write: '!', move: _constants2.default.LEFT, next: 'J' },
+	    // ACCEPT YOU FUCK!
+	    { read: '#', write: ' ', move: ' ', next: 'ACCEPT' }]
+	  }
+	}];
+
+	module.exports = programs;
+
+/***/ }),
+/* 240 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -25722,11 +25862,11 @@
 
 	var _constants2 = _interopRequireDefault(_constants);
 
-	var _tape = __webpack_require__(240);
+	var _tape = __webpack_require__(241);
 
 	var _tape2 = _interopRequireDefault(_tape);
 
-	var _arrowDropUp = __webpack_require__(243);
+	var _arrowDropUp = __webpack_require__(242);
 
 	var _arrowDropUp2 = _interopRequireDefault(_arrowDropUp);
 
@@ -25818,15 +25958,51 @@
 	module.exports = Tape;
 
 /***/ }),
-/* 240 */
+/* 241 */
 /***/ (function(module, exports) {
 
 	// removed by extract-text-webpack-plugin
 	module.exports = {"status":"tape__status","tapeContainer":"tape__tapeContainer","_entry":"tape___entry","start":"tape__start","entry":"tape__entry","entryContainer":"tape__entryContainer","head":"tape__head"};
 
 /***/ }),
-/* 241 */,
 /* 242 */
+/***/ (function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+
+	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+	var _react = __webpack_require__(2);
+
+	var _react2 = _interopRequireDefault(_react);
+
+	var _reactIconBase = __webpack_require__(243);
+
+	var _reactIconBase2 = _interopRequireDefault(_reactIconBase);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	var MdArrowDropUp = function MdArrowDropUp(props) {
+	    return _react2.default.createElement(
+	        _reactIconBase2.default,
+	        _extends({ viewBox: '0 0 40 40' }, props),
+	        _react2.default.createElement(
+	            'g',
+	            null,
+	            _react2.default.createElement('path', { d: 'm11.6 23.4l8.4-8.4 8.4 8.4h-16.8z' })
+	        )
+	    );
+	};
+
+	exports.default = MdArrowDropUp;
+	module.exports = exports['default'];
+
+/***/ }),
+/* 243 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -25884,43 +26060,6 @@
 	};
 
 	exports.default = IconBase;
-	module.exports = exports['default'];
-
-/***/ }),
-/* 243 */
-/***/ (function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-	    value: true
-	});
-
-	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
-	var _react = __webpack_require__(2);
-
-	var _react2 = _interopRequireDefault(_react);
-
-	var _reactIconBase = __webpack_require__(242);
-
-	var _reactIconBase2 = _interopRequireDefault(_reactIconBase);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	var MdArrowDropUp = function MdArrowDropUp(props) {
-	    return _react2.default.createElement(
-	        _reactIconBase2.default,
-	        _extends({ viewBox: '0 0 40 40' }, props),
-	        _react2.default.createElement(
-	            'g',
-	            null,
-	            _react2.default.createElement('path', { d: 'm11.6 23.4l8.4-8.4 8.4 8.4h-16.8z' })
-	        )
-	    );
-	};
-
-	exports.default = MdArrowDropUp;
 	module.exports = exports['default'];
 
 /***/ }),
@@ -26007,6 +26146,21 @@
 	        }
 	        _this.props.updateProgram(nodeName, ruleIdx, newRule);
 	      };
+	    }, _this.selector = function (nodeName, ruleIdx, fieldName, value, options) {
+	      return _react2.default.createElement(
+	        'select',
+	        {
+	          onChange: _this.handleSelect(fieldName, ruleIdx, nodeName),
+	          value: value
+	        },
+	        options.map(function (chr, idx) {
+	          return _react2.default.createElement(
+	            'option',
+	            { key: idx, value: chr },
+	            chr
+	          );
+	        })
+	      );
 	    }, _temp), _possibleConstructorReturn(_this, _ret);
 	  }
 
@@ -26076,108 +26230,22 @@
 	                  _react2.default.createElement(
 	                    'span',
 	                    null,
-	                    _react2.default.createElement(
-	                      'select',
-	                      {
-	                        onChange: _this2.handleSelect('READ', idx, nodeName),
-	                        defaultValue: rule.read
-	                      },
-	                      _react2.default.createElement(
-	                        'option',
-	                        { value: '0' },
-	                        '0'
-	                      ),
-	                      _react2.default.createElement(
-	                        'option',
-	                        { value: '1' },
-	                        '1'
-	                      ),
-	                      _react2.default.createElement(
-	                        'option',
-	                        { value: '#' },
-	                        '#'
-	                      ),
-	                      _react2.default.createElement(
-	                        'option',
-	                        { value: _constants2.default.BLANK },
-	                        _constants2.default.BLANK
-	                      )
-	                    )
+	                    _this2.selector(nodeName, idx, 'READ', rule.read, ["0", "1", "#", "!", "$", "&", _constants2.default.BLANK])
 	                  ),
 	                  _react2.default.createElement(
 	                    'span',
 	                    null,
-	                    _react2.default.createElement(
-	                      'select',
-	                      {
-	                        onChange: _this2.handleSelect('WRITE', idx, nodeName),
-	                        defaultValue: rule.write
-	                      },
-	                      _react2.default.createElement(
-	                        'option',
-	                        { value: '0' },
-	                        '0'
-	                      ),
-	                      _react2.default.createElement(
-	                        'option',
-	                        { value: '1' },
-	                        '1'
-	                      ),
-	                      _react2.default.createElement(
-	                        'option',
-	                        { value: '#' },
-	                        '#'
-	                      ),
-	                      _react2.default.createElement(
-	                        'option',
-	                        { value: _constants2.default.BLANK },
-	                        _constants2.default.BLANK
-	                      )
-	                    )
+	                    _this2.selector(nodeName, idx, 'WRITE', rule.write, ["0", "1", "!", "$", "&", _constants2.default.BLANK])
 	                  ),
 	                  _react2.default.createElement(
 	                    'span',
 	                    null,
-	                    _react2.default.createElement(
-	                      'select',
-	                      {
-	                        onChange: _this2.handleSelect('MOVE', idx, nodeName),
-	                        defaultValue: rule.move
-	                      },
-	                      _react2.default.createElement(
-	                        'option',
-	                        { value: 'RIGHT' },
-	                        'RIGHT'
-	                      ),
-	                      _react2.default.createElement(
-	                        'option',
-	                        { value: 'LEFT' },
-	                        'LEFT'
-	                      ),
-	                      _react2.default.createElement(
-	                        'option',
-	                        { value: _constants2.default.BLANK },
-	                        _constants2.default.BLANK
-	                      )
-	                    )
+	                    _this2.selector(nodeName, idx, 'MOVE', rule.move, ["RIGHT", "LEFT", _constants2.default.BLANK])
 	                  ),
 	                  _react2.default.createElement(
 	                    'span',
 	                    null,
-	                    _react2.default.createElement(
-	                      'select',
-	                      {
-	                        onChange: _this2.handleSelect('NEXT', idx, nodeName),
-	                        defaultValue: rule.next
-	                      },
-	                      Object.keys(program).concat(['ACCEPT', _constants2.default.BLANK]).map(function (_nodeName, _idx) {
-	                        return _react2.default.createElement(
-	                          'option',
-	                          { key: _idx, value: _nodeName },
-	                          _nodeName
-	                        );
-	                      })
-	                    )
+	                    _this2.selector(nodeName, idx, 'NEXT', rule.next, Object.keys(program).concat(['ACCEPT', _constants2.default.BLANK]))
 	                  )
 	                );
 	              })
@@ -26217,7 +26285,7 @@
 /***/ (function(module, exports) {
 
 	// removed by extract-text-webpack-plugin
-	module.exports = {"appContent":"app__appContent"};
+	module.exports = {"appContainer":"app__appContainer","appContent":"app__appContent"};
 
 /***/ })
 /******/ ]);
