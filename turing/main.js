@@ -96,7 +96,7 @@
 	var initialState = {
 	  machine: {
 	    state: _constants2.default.VIRGIN,
-	    delay: 300, // ms
+	    delay: 150, // ms
 	    head: _constants2.default.HEAD_START,
 	    match: {
 	      node: _constants2.default.INIT,
@@ -25323,13 +25323,20 @@
 	  RESET_MACHINE: 'RESET_MACHINE',
 	  SET_DELAY: 'SET_DELAY',
 	  UPDATE_PROGRAM: 'UPDATE_PROGRAM',
-	  LOAD_PROGRAM: 'LOAD_PROGRAM'
+	  LOAD_PROGRAM: 'LOAD_PROGRAM',
+	  LOAD_TAPE: 'LOAD_TAPE'
 	};
 
-	var loadProgram = function loadProgram(program, tape) {
+	var loadProgram = function loadProgram(program) {
 	  return {
 	    type: types.LOAD_PROGRAM,
-	    program: program,
+	    program: program
+	  };
+	};
+
+	var loadTape = function loadTape(tape) {
+	  return {
+	    type: types.LOAD_TAPE,
 	    tape: tape
 	  };
 	};
@@ -25389,6 +25396,7 @@
 	  setTape: setTape,
 	  setDelay: setDelay,
 	  loadProgram: loadProgram,
+	  loadTape: loadTape,
 	  updateProgram: updateProgram
 	};
 
@@ -25452,6 +25460,8 @@
 	        return updateProgram(action, state);
 	      case _actions.types.LOAD_PROGRAM:
 	        return loadProgram(action, state);
+	      case _actions.types.LOAD_TAPE:
+	        return loadTape(action, state);
 	      default:
 	        return _extends({}, state);
 	    }
@@ -25463,7 +25473,15 @@
 	    machine: _extends({}, state.machine, {
 	      state: _constants2.default.VIRGIN
 	    }),
-	    program: action.program,
+	    program: action.program
+	  });
+	};
+
+	var loadTape = function loadTape(action, state) {
+	  return _extends({}, state, {
+	    machine: _extends({}, state.machine, {
+	      state: _constants2.default.VIRGIN
+	    }),
 	    tape: action.tape
 	  });
 	};
@@ -25536,15 +25554,15 @@
 
 	var _dashboard2 = _interopRequireDefault(_dashboard);
 
-	var _tape = __webpack_require__(240);
+	var _tape = __webpack_require__(243);
 
 	var _tape2 = _interopRequireDefault(_tape);
 
-	var _program = __webpack_require__(244);
+	var _program = __webpack_require__(246);
 
 	var _program2 = _interopRequireDefault(_program);
 
-	var _app = __webpack_require__(246);
+	var _app = __webpack_require__(248);
 
 	var _app2 = _interopRequireDefault(_app);
 
@@ -25574,6 +25592,7 @@
 	        _react2.default.createElement(_dashboard2.default, {
 	          startMachine: this.props.startMachine,
 	          loadProgram: this.props.loadProgram,
+	          loadTape: this.props.loadTape,
 	          setDelay: this.props.setDelay,
 	          machine: this.props.machine
 	        }),
@@ -25617,8 +25636,11 @@
 	    setDelay: function setDelay(delay) {
 	      return dispatch(_actions2.default.setDelay(delay));
 	    },
-	    loadProgram: function loadProgram(program, tape) {
-	      return dispatch(_actions2.default.loadProgram(program, tape));
+	    loadProgram: function loadProgram(program) {
+	      return dispatch(_actions2.default.loadProgram(program));
+	    },
+	    loadTape: function loadTape(tape) {
+	      return dispatch(_actions2.default.loadTape(tape));
 	    },
 	    updateProgram: function updateProgram(nodeName, ruleIdx, newRule) {
 	      return dispatch(_actions2.default.updateProgram(nodeName, ruleIdx, newRule));
@@ -25656,11 +25678,11 @@
 
 	var _programs2 = _interopRequireDefault(_programs);
 
-	var _plus = __webpack_require__(247);
+	var _plus = __webpack_require__(240);
 
 	var _plus2 = _interopRequireDefault(_plus);
 
-	var _minus = __webpack_require__(248);
+	var _minus = __webpack_require__(242);
 
 	var _minus2 = _interopRequireDefault(_minus);
 
@@ -25716,6 +25738,7 @@
 	      var _props = this.props,
 	          startMachine = _props.startMachine,
 	          loadProgram = _props.loadProgram,
+	          loadTape = _props.loadTape,
 	          machine = _props.machine;
 
 	      var isRunning = machine.state === _constants2.default.RUNNING;
@@ -25776,8 +25799,11 @@
 	              null,
 	              p.description
 	            ),
-	            button('Load', function () {
-	              return loadProgram(p.program, p.tape);
+	            button('Load Program', function () {
+	              return loadProgram(p.program);
+	            }),
+	            button('Load Tape', function () {
+	              return loadTape(p.tape);
 	            })
 	          );
 	        })
@@ -25791,6 +25817,7 @@
 	Dashboard.propTypes = {
 	  startMachine: _propTypes2.default.func.isRequired,
 	  loadProgram: _propTypes2.default.func.isRequired,
+	  loadTape: _propTypes2.default.func.isRequired,
 	  setDelay: _propTypes2.default.func.isRequired,
 	  machine: _propTypes2.default.shape({
 	    state: _propTypes2.default.string
@@ -25820,20 +25847,6 @@
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	var programs = [{
-	  title: 'Blank Program',
-	  description: 'Does nothing',
-	  tape: [_constants2.default.START, '0', '1', _constants2.default.BLANK, _constants2.default.BLANK, _constants2.default.BLANK],
-	  program: {
-	    A: [_constants2.default.BLANK_RULE]
-	  }
-	}, {
-	  title: 'Buggy Program',
-	  description: 'Writes 1s forever.',
-	  tape: [_constants2.default.START, '0', '1', _constants2.default.BLANK, _constants2.default.BLANK, _constants2.default.BLANK],
-	  program: {
-	    A: [{ read: '0', write: '1', move: _constants2.default.RIGHT, next: 'A' }, { read: '1', write: '1', move: _constants2.default.RIGHT, next: 'A' }, { read: ' ', write: '1', move: _constants2.default.RIGHT, next: 'A' }]
-	  }
-	}, {
 	  title: '0x1x Checker',
 	  description: 'Accepts a string of 0x1x Eg. 000111',
 	  tape: [_constants2.default.START, '0', '0', '0', '1', '1', '1', _constants2.default.BLANK, _constants2.default.BLANK],
@@ -25899,12 +25912,163 @@
 	    /// and then accept
 	    { read: '&', write: '&', move: _constants2.default.LEFT, next: 'J' }, { read: '!', write: '!', move: _constants2.default.LEFT, next: 'J' }, { read: '#', write: '#', move: ' ', next: 'ACCEPT' }]
 	  }
+	}, {
+	  title: 'Blank Program',
+	  description: 'Does nothing',
+	  tape: [_constants2.default.START, '0', '1', _constants2.default.BLANK, _constants2.default.BLANK, _constants2.default.BLANK],
+	  program: {
+	    A: [_constants2.default.BLANK_RULE],
+	    B: [_constants2.default.BLANK_RULE]
+	  }
+	}, {
+	  title: 'Buggy Program',
+	  description: 'Writes 1s forever.',
+	  tape: [_constants2.default.START, '0', '1', _constants2.default.BLANK, _constants2.default.BLANK, _constants2.default.BLANK],
+	  program: {
+	    A: [{ read: '0', write: '1', move: _constants2.default.RIGHT, next: 'A' }, { read: '1', write: '1', move: _constants2.default.RIGHT, next: 'A' }, { read: ' ', write: '1', move: _constants2.default.RIGHT, next: 'A' }],
+	    B: [_constants2.default.BLANK_RULE]
+	  }
 	}];
 
 	module.exports = programs;
 
 /***/ }),
 /* 240 */
+/***/ (function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+
+	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+	var _react = __webpack_require__(2);
+
+	var _react2 = _interopRequireDefault(_react);
+
+	var _reactIconBase = __webpack_require__(241);
+
+	var _reactIconBase2 = _interopRequireDefault(_reactIconBase);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	var FaPlus = function FaPlus(props) {
+	    return _react2.default.createElement(
+	        _reactIconBase2.default,
+	        _extends({ viewBox: '0 0 40 40' }, props),
+	        _react2.default.createElement(
+	            'g',
+	            null,
+	            _react2.default.createElement('path', { d: 'm35.9 16.4v4.3q0 0.9-0.6 1.5t-1.5 0.7h-9.3v9.2q0 0.9-0.6 1.6t-1.5 0.6h-4.3q-0.9 0-1.5-0.6t-0.7-1.6v-9.2h-9.3q-0.9 0-1.5-0.7t-0.6-1.5v-4.3q0-0.9 0.6-1.5t1.5-0.6h9.3v-9.3q0-0.9 0.7-1.5t1.5-0.6h4.3q0.9 0 1.5 0.6t0.6 1.5v9.3h9.3q0.9 0 1.5 0.6t0.6 1.5z' })
+	        )
+	    );
+	};
+
+	exports.default = FaPlus;
+	module.exports = exports['default'];
+
+/***/ }),
+/* 241 */
+/***/ (function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+	var _react = __webpack_require__(2);
+
+	var _react2 = _interopRequireDefault(_react);
+
+	var _propTypes = __webpack_require__(206);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _objectWithoutProperties(obj, keys) { var target = {}; for (var i in obj) { if (keys.indexOf(i) >= 0) continue; if (!Object.prototype.hasOwnProperty.call(obj, i)) continue; target[i] = obj[i]; } return target; }
+
+	var IconBase = function IconBase(_ref, _ref2) {
+	  var children = _ref.children;
+	  var color = _ref.color;
+	  var size = _ref.size;
+	  var style = _ref.style;
+
+	  var props = _objectWithoutProperties(_ref, ['children', 'color', 'size', 'style']);
+
+	  var _ref2$reactIconBase = _ref2.reactIconBase;
+	  var reactIconBase = _ref2$reactIconBase === undefined ? {} : _ref2$reactIconBase;
+
+	  var computedSize = size || reactIconBase.size || '1em';
+	  return _react2.default.createElement('svg', _extends({
+	    children: children,
+	    fill: 'currentColor',
+	    preserveAspectRatio: 'xMidYMid meet',
+	    height: computedSize,
+	    width: computedSize
+	  }, reactIconBase, props, {
+	    style: _extends({
+	      verticalAlign: 'middle',
+	      color: color || reactIconBase.color
+	    }, reactIconBase.style || {}, style)
+	  }));
+	};
+
+	IconBase.propTypes = {
+	  color: _propTypes.PropTypes.string,
+	  size: _propTypes.PropTypes.oneOfType([_propTypes.PropTypes.string, _propTypes.PropTypes.number]),
+	  style: _propTypes.PropTypes.object
+	};
+
+	IconBase.contextTypes = {
+	  reactIconBase: _propTypes.PropTypes.shape(IconBase.propTypes)
+	};
+
+	exports.default = IconBase;
+	module.exports = exports['default'];
+
+/***/ }),
+/* 242 */
+/***/ (function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+
+	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+	var _react = __webpack_require__(2);
+
+	var _react2 = _interopRequireDefault(_react);
+
+	var _reactIconBase = __webpack_require__(241);
+
+	var _reactIconBase2 = _interopRequireDefault(_reactIconBase);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	var FaMinus = function FaMinus(props) {
+	    return _react2.default.createElement(
+	        _reactIconBase2.default,
+	        _extends({ viewBox: '0 0 40 40' }, props),
+	        _react2.default.createElement(
+	            'g',
+	            null,
+	            _react2.default.createElement('path', { d: 'm35.9 16.4v4.3q0 0.9-0.6 1.5t-1.5 0.7h-27.2q-0.8 0-1.5-0.7t-0.6-1.5v-4.3q0-0.9 0.6-1.5t1.5-0.6h27.2q0.9 0 1.5 0.6t0.6 1.5z' })
+	        )
+	    );
+	};
+
+	exports.default = FaMinus;
+	module.exports = exports['default'];
+
+/***/ }),
+/* 243 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -25923,11 +26087,11 @@
 
 	var _constants2 = _interopRequireDefault(_constants);
 
-	var _tape = __webpack_require__(241);
+	var _tape = __webpack_require__(244);
 
 	var _tape2 = _interopRequireDefault(_tape);
 
-	var _arrowDropUp = __webpack_require__(242);
+	var _arrowDropUp = __webpack_require__(245);
 
 	var _arrowDropUp2 = _interopRequireDefault(_arrowDropUp);
 
@@ -26019,14 +26183,14 @@
 	module.exports = Tape;
 
 /***/ }),
-/* 241 */
+/* 244 */
 /***/ (function(module, exports) {
 
 	// removed by extract-text-webpack-plugin
 	module.exports = {"status":"tape__status","tapeContainer":"tape__tapeContainer","_entry":"tape___entry","start":"tape__start","entry":"tape__entry","entryContainer":"tape__entryContainer","head":"tape__head"};
 
 /***/ }),
-/* 242 */
+/* 245 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -26041,7 +26205,7 @@
 
 	var _react2 = _interopRequireDefault(_react);
 
-	var _reactIconBase = __webpack_require__(243);
+	var _reactIconBase = __webpack_require__(241);
 
 	var _reactIconBase2 = _interopRequireDefault(_reactIconBase);
 
@@ -26063,68 +26227,7 @@
 	module.exports = exports['default'];
 
 /***/ }),
-/* 243 */
-/***/ (function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-
-	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
-	var _react = __webpack_require__(2);
-
-	var _react2 = _interopRequireDefault(_react);
-
-	var _propTypes = __webpack_require__(206);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	function _objectWithoutProperties(obj, keys) { var target = {}; for (var i in obj) { if (keys.indexOf(i) >= 0) continue; if (!Object.prototype.hasOwnProperty.call(obj, i)) continue; target[i] = obj[i]; } return target; }
-
-	var IconBase = function IconBase(_ref, _ref2) {
-	  var children = _ref.children;
-	  var color = _ref.color;
-	  var size = _ref.size;
-	  var style = _ref.style;
-
-	  var props = _objectWithoutProperties(_ref, ['children', 'color', 'size', 'style']);
-
-	  var _ref2$reactIconBase = _ref2.reactIconBase;
-	  var reactIconBase = _ref2$reactIconBase === undefined ? {} : _ref2$reactIconBase;
-
-	  var computedSize = size || reactIconBase.size || '1em';
-	  return _react2.default.createElement('svg', _extends({
-	    children: children,
-	    fill: 'currentColor',
-	    preserveAspectRatio: 'xMidYMid meet',
-	    height: computedSize,
-	    width: computedSize
-	  }, reactIconBase, props, {
-	    style: _extends({
-	      verticalAlign: 'middle',
-	      color: color || reactIconBase.color
-	    }, reactIconBase.style || {}, style)
-	  }));
-	};
-
-	IconBase.propTypes = {
-	  color: _propTypes.PropTypes.string,
-	  size: _propTypes.PropTypes.oneOfType([_propTypes.PropTypes.string, _propTypes.PropTypes.number]),
-	  style: _propTypes.PropTypes.object
-	};
-
-	IconBase.contextTypes = {
-	  reactIconBase: _propTypes.PropTypes.shape(IconBase.propTypes)
-	};
-
-	exports.default = IconBase;
-	module.exports = exports['default'];
-
-/***/ }),
-/* 244 */
+/* 246 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -26141,7 +26244,7 @@
 
 	var _propTypes2 = _interopRequireDefault(_propTypes);
 
-	var _program = __webpack_require__(245);
+	var _program = __webpack_require__(247);
 
 	var _program2 = _interopRequireDefault(_program);
 
@@ -26335,92 +26438,18 @@
 	module.exports = Program;
 
 /***/ }),
-/* 245 */
+/* 247 */
 /***/ (function(module, exports) {
 
 	// removed by extract-text-webpack-plugin
 	module.exports = {"node":"program__node","_nodeHeader":"program___nodeHeader","topHeader":"program__topHeader","nodeHeader":"program__nodeHeader","active":"program__active","nodeRules":"program__nodeRules","rule":"program__rule","header":"program__header"};
 
 /***/ }),
-/* 246 */
+/* 248 */
 /***/ (function(module, exports) {
 
 	// removed by extract-text-webpack-plugin
 	module.exports = {"appContainer":"app__appContainer","appContent":"app__appContent"};
-
-/***/ }),
-/* 247 */
-/***/ (function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-	    value: true
-	});
-
-	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
-	var _react = __webpack_require__(2);
-
-	var _react2 = _interopRequireDefault(_react);
-
-	var _reactIconBase = __webpack_require__(243);
-
-	var _reactIconBase2 = _interopRequireDefault(_reactIconBase);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	var FaPlus = function FaPlus(props) {
-	    return _react2.default.createElement(
-	        _reactIconBase2.default,
-	        _extends({ viewBox: '0 0 40 40' }, props),
-	        _react2.default.createElement(
-	            'g',
-	            null,
-	            _react2.default.createElement('path', { d: 'm35.9 16.4v4.3q0 0.9-0.6 1.5t-1.5 0.7h-9.3v9.2q0 0.9-0.6 1.6t-1.5 0.6h-4.3q-0.9 0-1.5-0.6t-0.7-1.6v-9.2h-9.3q-0.9 0-1.5-0.7t-0.6-1.5v-4.3q0-0.9 0.6-1.5t1.5-0.6h9.3v-9.3q0-0.9 0.7-1.5t1.5-0.6h4.3q0.9 0 1.5 0.6t0.6 1.5v9.3h9.3q0.9 0 1.5 0.6t0.6 1.5z' })
-	        )
-	    );
-	};
-
-	exports.default = FaPlus;
-	module.exports = exports['default'];
-
-/***/ }),
-/* 248 */
-/***/ (function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-	    value: true
-	});
-
-	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
-	var _react = __webpack_require__(2);
-
-	var _react2 = _interopRequireDefault(_react);
-
-	var _reactIconBase = __webpack_require__(243);
-
-	var _reactIconBase2 = _interopRequireDefault(_reactIconBase);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	var FaMinus = function FaMinus(props) {
-	    return _react2.default.createElement(
-	        _reactIconBase2.default,
-	        _extends({ viewBox: '0 0 40 40' }, props),
-	        _react2.default.createElement(
-	            'g',
-	            null,
-	            _react2.default.createElement('path', { d: 'm35.9 16.4v4.3q0 0.9-0.6 1.5t-1.5 0.7h-27.2q-0.8 0-1.5-0.7t-0.6-1.5v-4.3q0-0.9 0.6-1.5t1.5-0.6h27.2q0.9 0 1.5 0.6t0.6 1.5z' })
-	        )
-	    );
-	};
-
-	exports.default = FaMinus;
-	module.exports = exports['default'];
 
 /***/ })
 /******/ ]);

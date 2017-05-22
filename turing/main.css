@@ -24,7 +24,8 @@ html, body, h1, h2, h3 {
   display: block;
   background: #ccc;
   border: none;
-  cursor: pointer; }
+  cursor: pointer;
+  margin: 3px 0; }
 
 .dashboard__delayWidget span {
   -webkit-user-select: none;
