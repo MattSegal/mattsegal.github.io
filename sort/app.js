@@ -170,21 +170,21 @@ module.exports = {
     }).reverse();
   },
 
-  runSort: function runSort(swap, compare, update) {
+  runSort: function runSort(compare, swap, update) {
     // pass in array by value
     var arrayCopy = this.array.slice();
     switch (this.sortMethod) {
       case 'bubbleSort':
-        (0, _bubbleSort2.default)(arrayCopy)(swap, compare);
+        (0, _bubbleSort2.default)(arrayCopy)(compare, swap);
         break;
       case 'insertionSort':
-        (0, _insertionSort2.default)(arrayCopy)(swap, compare);
+        (0, _insertionSort2.default)(arrayCopy)(compare, swap);
         break;
       case 'cocktailSort':
-        (0, _cocktailSort2.default)(arrayCopy)(swap, compare);
+        (0, _cocktailSort2.default)(arrayCopy)(compare, swap);
         break;
       case 'mergeSort':
-        (0, _mergeSort2.default)(arrayCopy)(update, compare);
+        (0, _mergeSort2.default)(arrayCopy)(compare, update);
         break;
     }
   },
@@ -281,8 +281,8 @@ module.exports = {
   VAL_INCREMENT: 10,
 
   // Sorting render delay (ms)
-  INITIAL_DELAY: 80,
-  MAX_DELAY: 220,
+  INITIAL_DELAY: 100,
+  MAX_DELAY: 300,
   MIN_DELAY: 40,
   DELAY_INCREMENT: 20
 };
@@ -897,7 +897,7 @@ _observer2.default.addEvent(_actions2.default.SORT_ARRAY, function () {
     return actions.push({ type: 'UPDATE', arr: arr, start: start });
   };
 
-  _model2.default.runSort(swap, compare, update);
+  _model2.default.runSort(compare, swap, update);
 
   // Loop over sort actions and render for user
   var idx = 0;
@@ -910,7 +910,10 @@ _observer2.default.addEvent(_actions2.default.SORT_ARRAY, function () {
     } else if (action.type === 'SWAP') {
       _model2.default.swap(action.i, action.j);
       _observer2.default.emitEvent(_actions2.default.DRAW_BAR_SWAP, [action.i, action.j]);
-    } else if (action.type === 'UPDATE') {
+    }
+
+    // Don't wait for updates
+    if (action.type === 'UPDATE') {
       for (var i = 0; i < action.arr.length; i++) {
         _model2.default.array[action.start + i] = action.arr[i];
       }
@@ -1112,7 +1115,7 @@ module.exports = insertionSort;
 
 
 var mergeSort = function mergeSort(arr) {
-    return function (update, compare) {
+    return function (compare, update) {
         if (arr.length <= 1) return arr;
 
         // Initialise absolute index tracking
@@ -1130,14 +1133,14 @@ var mergeSort = function mergeSort(arr) {
         B.start = arr.start + splitIdx;
         B.end = arr.end;
 
-        var ASorted = mergeSort(A)(update, compare);
-        var BSorted = mergeSort(B)(update, compare);
-        return merge(ASorted, BSorted)(update, compare);
+        var ASorted = mergeSort(A)(compare, update);
+        var BSorted = mergeSort(B)(compare, update);
+        return merge(ASorted, BSorted)(compare, update);
     };
 };
 
 var merge = function merge(A, B) {
-    return function (update, compare) {
+    return function (compare, update) {
         var C = Array(A.length + B.length);
         C.start = A.start;
         C.end = B.end;
@@ -1146,26 +1149,23 @@ var merge = function merge(A, B) {
         var idxB = 0;
 
         for (var idxC = 0; idxC < C.length; idxC++) {
+            compare(C.start + idxC, C.start + A.length - 1 + idxB);
             if (idxA === A.length) {
                 // We've exhausted A, use the rest of B
                 C[idxC] = B[idxB];
                 idxB++;
-                compare(getStartA(C, idxA), getStartB(C, A, idxB));
             } else if (idxB === B.length) {
                 // We've exhausted B, use the rest of A
                 C[idxC] = A[idxA];
                 idxA++;
-                compare(getStartA(C, idxA), getStartB(C, A, idxB));
             } else if (A[idxA] < B[idxB]) {
                 // A is smaller, select A
                 C[idxC] = A[idxA];
                 idxA++;
-                compare(getStartA(C, idxA), getStartB(C, A, idxB));
             } else {
                 // B is smaller, select B
                 C[idxC] = B[idxB];
                 idxB++;
-                compare(getStartA(C, idxA), getStartB(C, A, idxB));
                 update(buildSection(A, B, C, idxA, idxB, idxC), C.start);
             }
         }
@@ -1175,14 +1175,6 @@ var merge = function merge(A, B) {
 
 var buildSection = function buildSection(A, B, C, idxA, idxB, idxC) {
     return C.slice(0, idxC + 1).concat(A.slice(idxA)).concat(B.slice(idxB));
-};
-
-var getStartA = function getStartA(C, idxA) {
-    return C.start + idxA;
-};
-
-var getStartB = function getStartB(C, A, idxB) {
-    return C.start + A.length - 1 + idxB;
 };
 
 module.exports = mergeSort;
@@ -1196,7 +1188,7 @@ exports = module.exports = __webpack_require__(8)(undefined);
 
 
 // module
-exports.push([module.i, "html, body {\n  margin: 0;\n  padding: 0; }\n\nbody {\n  background-color: #ddd;\n  font-family: 'Open Sans', sans-serif; }\n\nheader {\n  background-color: #ddd;\n  width: 600px;\n  border-radius: 5px;\n  height: 50px;\n  margin: 10px auto 0 auto;\n  text-align: center;\n  line-height: 50px;\n  font-family: \"Signika\";\n  font-size: 30px;\n  color: #444; }\n\n@media (max-height: 760px) {\n  header {\n    height: 15px;\n    margin: 5px auto 0 auto;\n    line-height: 15px;\n    font-size: 15px; } }\n\n#chart {\n  background-color: #ddd;\n  width: 600px;\n  height: 450px;\n  margin: 10px auto 0 auto;\n  position: relative;\n  display: flex;\n  justify-content: space-around;\n  align-items: flex-end; }\n\n.chart-grid {\n  position: absolute;\n  top: 0px;\n  box-sizing: border-box;\n  width: 600px;\n  height: 450px;\n  cursor: pointer;\n  display: flex; }\n  .chart-grid .col {\n    box-sizing: border-box;\n    height: 450px;\n    width: 100%;\n    display: flex;\n    flex-direction: column-reverse; }\n  .chart-grid .row {\n    z-index: 2;\n    box-sizing: border-box;\n    height: 100%;\n    width: 100%;\n    border-radius: 5px; }\n    .chart-grid .row:hover {\n      border: 4px solid #ff6464; }\n\n.bar {\n  width: 100%;\n  height: 200px;\n  box-sizing: border-box;\n  background-color: #777;\n  border-radius: 5px 5px 0 0; }\n  .bar.i {\n    background-color: #e77; }\n  .bar.j {\n    background-color: #7e7; }\n  .bar.thin-bar {\n    margin: 0 2px;\n    border: 2px solid #fff; }\n  .bar.mid-bar {\n    margin: 0 1px;\n    border: 2px solid #fff; }\n  .bar.fat-bar {\n    margin: 0 0px;\n    border: 2px solid #fff; }\n  .bar.fatter-bar {\n    margin: 0 0px;\n    border: 1px solid #fff; }\n\n.control-panel {\n  width: 600px;\n  height: 235px;\n  border-radius: 5px;\n  background-color: #ddd;\n  box-sizing: border-box;\n  display: flex;\n  margin: 10px auto 0 auto;\n  padding: 10px;\n  -webkit-user-select: none;\n  /* Chrome/Safari */\n  -moz-user-select: none;\n  /* Firefox */\n  -ms-user-select: none;\n  /* IE10+ */ }\n  .control-panel .controls {\n    width: 100%; }\n  .control-panel .sort-method-options {\n    width: 100%;\n    display: flex;\n    flex-direction: column; }\n\n.input, button, .method-title, .radio-input, .selector {\n  height: 30px;\n  font-size: 20px;\n  font: 20px normal 'Open Sans';\n  margin-bottom: 5px; }\n\n.button-color, button, .selector .incrementor {\n  background: #e0e0e0;\n  background-image: linear-gradient(#f0f0f0, #e0e0e0); }\n  .button-color:hover, button:hover, .selector .incrementor:hover {\n    background: #c8c8c8;\n    background-image: linear-gradient(#f0f0f0, #c8c8c8); }\n\nbutton {\n  width: calc(100% / 3 - 7px);\n  border-radius: 5px;\n  margin: 0 5px 10px 0;\n  cursor: pointer;\n  box-shadow: 1px 1px 2px 1px #888;\n  border: none;\n  font-size: 15px; }\n  button:nth-child(3) {\n    margin-right: 0; }\n\n.method-title {\n  margin-left: 20%;\n  border-bottom: 2px solid #888;\n  box-sizing: border-box;\n  width: 160px; }\n\n.method-title, label {\n  font-size: 15px; }\n\n.radio-input {\n  margin-left: 20%;\n  width: 150px;\n  height: 20px; }\n\ninput[type=radio] {\n  display: none; }\n\ninput[type=radio] + label > span {\n  display: inline-block;\n  width: 0.8em;\n  height: 0.8em;\n  float: right;\n  margin: 0.25em 0 0.25em 0;\n  vertical-align: bottom;\n  border-radius: 0.25em;\n  background: #e0e0e0;\n  background-image: linear-gradient(#f0f0f0, #e0e0e0);\n  box-shadow: 1px 1px 2px 1px #888; }\n\ninput[type=radio]:checked + label > span > span {\n  display: block;\n  width: 0.5em;\n  height: 0.5em;\n  margin: 0.15em auto;\n  border-radius: 0.15em;\n  background-image: linear-gradient(#e67864, #e63232); }\n\n.selector {\n  display: flex;\n  justify-content: space-between; }\n  .selector .selector-title {\n    width: 200px;\n    font-size: 15px; }\n  .selector .incrementor {\n    margin-left: 0.5em;\n    width: 1em;\n    height: 1em;\n    border-radius: 0.25em;\n    box-shadow: 1px 1px 2px 1px #888;\n    cursor: pointer; }\n  .selector .more:before, .selector .less:before {\n    display: block;\n    line-height: 1em;\n    text-align: center; }\n  .selector .more:before {\n    content: '+'; }\n  .selector .less:before {\n    content: '-'; }\n  .selector .display-num {\n    float: right;\n    width: 50px;\n    text-align: right;\n    font-size: 15px; }\n", ""]);
+exports.push([module.i, "html, body {\n  margin: 0;\n  padding: 0; }\n\nbody {\n  background-color: #ddd;\n  font-family: 'Open Sans', sans-serif; }\n\nheader {\n  background-color: #ddd;\n  width: 600px;\n  border-radius: 5px;\n  height: 50px;\n  margin: 10px auto 0 auto;\n  text-align: center;\n  line-height: 50px;\n  font-family: \"Signika\";\n  font-size: 30px;\n  color: #444; }\n\n@media (max-height: 760px) {\n  header {\n    height: 15px;\n    margin: 5px auto 0 auto;\n    line-height: 15px;\n    font-size: 15px; } }\n\n#chart {\n  background-color: #ddd;\n  width: 600px;\n  height: 450px;\n  margin: 10px auto 0 auto;\n  position: relative;\n  display: flex;\n  justify-content: space-around;\n  align-items: flex-end; }\n\n.chart-grid {\n  position: absolute;\n  top: 0px;\n  box-sizing: border-box;\n  width: 600px;\n  height: 450px;\n  cursor: pointer;\n  display: flex; }\n  .chart-grid .col {\n    box-sizing: border-box;\n    height: 450px;\n    width: 100%;\n    display: flex;\n    flex-direction: column-reverse; }\n  .chart-grid .row {\n    z-index: 2;\n    box-sizing: border-box;\n    height: 100%;\n    width: 100%;\n    border-radius: 5px; }\n    .chart-grid .row:hover {\n      border: 4px solid #ff6464; }\n\n.bar {\n  width: 100%;\n  height: 200px;\n  box-sizing: border-box;\n  background-color: #777;\n  border-radius: 5px 5px 0 0; }\n  .bar.i {\n    background-color: #e77; }\n  .bar.j {\n    background-color: #7e7; }\n  .bar.i.j {\n    background-color: #e77; }\n  .bar.thin-bar {\n    margin: 0 2px;\n    border: 2px solid #fff; }\n  .bar.mid-bar {\n    margin: 0 1px;\n    border: 2px solid #fff; }\n  .bar.fat-bar {\n    margin: 0 0px;\n    border: 2px solid #fff; }\n  .bar.fatter-bar {\n    margin: 0 0px;\n    border: 1px solid #fff; }\n\n.control-panel {\n  width: 600px;\n  height: 235px;\n  border-radius: 5px;\n  background-color: #ddd;\n  box-sizing: border-box;\n  display: flex;\n  margin: 10px auto 0 auto;\n  padding: 10px;\n  -webkit-user-select: none;\n  /* Chrome/Safari */\n  -moz-user-select: none;\n  /* Firefox */\n  -ms-user-select: none;\n  /* IE10+ */ }\n  .control-panel .controls {\n    width: 100%; }\n  .control-panel .sort-method-options {\n    width: 100%;\n    display: flex;\n    flex-direction: column; }\n\n.input, button, .method-title, .radio-input, .selector {\n  height: 30px;\n  font-size: 20px;\n  font: 20px normal 'Open Sans';\n  margin-bottom: 5px; }\n\n.button-color, button, .selector .incrementor {\n  background: #e0e0e0;\n  background-image: linear-gradient(#f0f0f0, #e0e0e0); }\n  .button-color:hover, button:hover, .selector .incrementor:hover {\n    background: #c8c8c8;\n    background-image: linear-gradient(#f0f0f0, #c8c8c8); }\n\nbutton {\n  width: calc(100% / 3 - 7px);\n  border-radius: 5px;\n  margin: 0 5px 10px 0;\n  cursor: pointer;\n  box-shadow: 1px 1px 2px 1px #888;\n  border: none;\n  font-size: 15px; }\n  button:nth-child(3) {\n    margin-right: 0; }\n\n.method-title {\n  margin-left: 20%;\n  border-bottom: 2px solid #888;\n  box-sizing: border-box;\n  width: 160px; }\n\n.method-title, label {\n  font-size: 15px; }\n\n.radio-input {\n  margin-left: 20%;\n  width: 150px;\n  height: 20px; }\n\ninput[type=radio] {\n  display: none; }\n\ninput[type=radio] + label > span {\n  display: inline-block;\n  width: 0.8em;\n  height: 0.8em;\n  float: right;\n  margin: 0.25em 0 0.25em 0;\n  vertical-align: bottom;\n  border-radius: 0.25em;\n  background: #e0e0e0;\n  background-image: linear-gradient(#f0f0f0, #e0e0e0);\n  box-shadow: 1px 1px 2px 1px #888; }\n\ninput[type=radio]:checked + label > span > span {\n  display: block;\n  width: 0.5em;\n  height: 0.5em;\n  margin: 0.15em auto;\n  border-radius: 0.15em;\n  background-image: linear-gradient(#e67864, #e63232); }\n\n.selector {\n  display: flex;\n  justify-content: space-between; }\n  .selector .selector-title {\n    width: 200px;\n    font-size: 15px; }\n  .selector .incrementor {\n    margin-left: 0.5em;\n    width: 1em;\n    height: 1em;\n    border-radius: 0.25em;\n    box-shadow: 1px 1px 2px 1px #888;\n    cursor: pointer; }\n  .selector .more:before, .selector .less:before {\n    display: block;\n    line-height: 1em;\n    text-align: center; }\n  .selector .more:before {\n    content: '+'; }\n  .selector .less:before {\n    content: '-'; }\n  .selector .display-num {\n    float: right;\n    width: 50px;\n    text-align: right;\n    font-size: 15px; }\n", ""]);
 
 // exports
 
