@@ -20,36 +20,29 @@ canvas {
 }
 
 .content-spacer {
-    margin-bottom: 60px;
-}
-
-.content {
-    width: 200px;
-    margin: 0 auto;
+    margin-bottom: 120px;
 }
 
 h1 {
     text-align: center;
     margin-bottom: 1.2em;
-    font-size: 40px;
+    font-size: 50px;
 }
 
 ul {
     padding: 0;
-    padding: 20px;
-    background-color: rgba(240,240,240,0.5);
-    border-radius: 20px;
 }
 
 li {
     list-style: none;
     text-align: center;
-    margin-bottom: 1.5em;
-    font-family: sans-serif;
+    margin-bottom: 2em;
 }
 
 a {
     font-size: 22px;
+    font-size: 30px;
+    font-weight: bold;
     text-decoration: none;
     color: #000;
 }
