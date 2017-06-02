@@ -1,23 +1,66 @@
-body {
+* {
+    padding: 0;
+    margin: 0;
+}
+
+html, body {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
     font-family: 'Slabo 27px', serif;
+}
+
+body, canvas {
+    background-color: rgb(240, 240, 240);
+}
+
+canvas {
+    z-index: -1;
+    position: absolute;
+}
+
+.content-spacer {
+    margin-bottom: 60px;
+}
+
+.content {
+    width: 200px;
+    margin: 0 auto;
 }
 
 h1 {
     text-align: center;
     margin-bottom: 1.2em;
+    font-size: 40px;
 }
 
 ul {
     padding: 0;
+    padding: 20px;
+    background-color: rgba(240,240,240,0.5);
+    border-radius: 20px;
 }
 
 li {
     list-style: none;
     text-align: center;
-    margin-bottom: 1.2em;
+    margin-bottom: 1.5em;
+    font-family: sans-serif;
 }
 
 a {
     font-size: 22px;
     text-decoration: none;
+    color: #000;
 }
+
+a:visited {
+    color: #000;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+
+
