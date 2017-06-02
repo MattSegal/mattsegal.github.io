@@ -1,16 +1,14 @@
 const rules = [
   [false, false, false, true, true, true, true, false], // Rule 30
   [false, true, true, true, true, true, true, false], // Rule 126
-  [false, true, true, true, false, true, false, true],
   [false, false, true, true, true, true, false, false],
-  [false, true, true, true, true, false, false, true],
   [true, true, false, false, false, true, true, false],
   [false, false, true, false, true, true, false, true],
   [false, true, true, false, true, true, true, false],
   [false, true, false, true, false, true, true, false],
   [true, false, true, false, false, true, false, true],
-  [true, false, true, false, false, true, true, true],
 ]
+
 
 const getRule = (ruleIdx) => {
   return (i,j, grid) => {
@@ -34,8 +32,8 @@ const runAutomata = (scale, rule) => new Promise((resolve) => {
   canvas.width  = window.innerWidth
   canvas.height = window.innerHeight
   let ctx = canvas.getContext('2d')
-  let CELL_HEIGHT = Math.round(8 * scale) 
-  let CELL_WIDTH = Math.round(8 * scale)
+  let CELL_HEIGHT = Math.round(5 * scale) 
+  let CELL_WIDTH = Math.round(5 * scale)
   let NUM_ROWS = Math.ceil(canvas.height / CELL_HEIGHT)
   let NUM_COLS = Math.ceil(canvas.width / CELL_WIDTH)
 
@@ -73,11 +71,11 @@ const runAutomata = (scale, rule) => new Promise((resolve) => {
 const loopRandomAutomata = () => {
   const randomRuleIdx = Math.floor(Math.random()*rules.length)
   const randomRule = getRule(randomRuleIdx)
-  const randomScale = Math.ceil(Math.random()*3)
+  const randomScale = Math.ceil(Math.random()*2)
   runAutomata(randomScale, randomRule)
   .then(() => loopRandomAutomata())
 }
 
 let initialRule = getRule(0)
-runAutomata(3, initialRule)
+runAutomata(2, initialRule)
 .then(() => loopRandomAutomata())
