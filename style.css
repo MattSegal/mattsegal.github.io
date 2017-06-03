@@ -8,10 +8,17 @@ html, body {
     width: 100%;
     overflow: hidden;
     font-family: 'Slabo 27px', serif;
+    font-size: 10px;
 }
 
 body, canvas {
     background-color: rgb(240, 240, 240);
+}
+
+@media (max-height: 500px) {
+    body {
+        font-size: 8px;
+    }
 }
 
 canvas {
@@ -22,14 +29,14 @@ canvas {
 .content-wrapper {
     display: flex;
     justify-content: center;
-    padding-top: 15%;
+    padding-top: 11em;
     height: 100%;
 }
 
 h1 {
     text-align: center;
     margin-bottom: 1.2em;
-    font-size: 50px;
+    font-size: 5em;
 }
 
 ul {
@@ -43,8 +50,7 @@ li {
 }
 
 a {
-    font-size: 22px;
-    font-size: 30px;
+    font-size: 3em;
     font-weight: bold;
     text-decoration: none;
     color: #000;
