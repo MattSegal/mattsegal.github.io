@@ -37,6 +37,11 @@ const runAutomata = (rule, scale, startMiddle) => new Promise((resolve) => {
   // Adjust canvas to window size
   canvas.width  = window.innerWidth
   canvas.height = window.innerHeight
+  const resize = () => {
+    canvas.width  = window.innerWidth
+    canvas.height = window.innerHeight
+  }
+  window.addEventListener('resize', resize, false);
   const ctx = canvas.getContext('2d')
 
   const CELL_LENGTH = MIN_CELL_LENGTH * scale  
