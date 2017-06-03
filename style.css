@@ -19,8 +19,11 @@ canvas {
     position: absolute;
 }
 
-.content-spacer {
-    margin-bottom: 120px;
+.content-wrapper {
+    display: flex;
+    justify-content: center;
+    padding-top: 15%;
+    height: 100%;
 }
 
 h1 {
