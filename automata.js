@@ -12,9 +12,9 @@ const rules = [
 
 const getRule = (ruleIdx) => {
   return (i,j, grid) => {
-    const left  = grid[i - 1][j - 1]
-    const mid   = grid[i - 1][j]
-    const right = grid[i - 1][j + 1]
+    const left  = grid[i + 1][j - 1]
+    const mid   = grid[i + 1][j]
+    const right = grid[i + 1][j + 1]
     if (left && mid && right) return rules[ruleIdx][0]
     if (left && mid && !right) return rules[ruleIdx][1]
     if (left && !mid && right) return rules[ruleIdx][2]
@@ -32,8 +32,8 @@ const runAutomata = (scale, rule) => new Promise((resolve) => {
   canvas.width  = window.innerWidth
   canvas.height = window.innerHeight
   let ctx = canvas.getContext('2d')
-  let CELL_HEIGHT = Math.round(5 * scale) 
-  let CELL_WIDTH = Math.round(5 * scale)
+  let CELL_HEIGHT = Math.round(4 * scale) 
+  let CELL_WIDTH = Math.round(4 * scale)
   let NUM_ROWS = Math.ceil(canvas.height / CELL_HEIGHT)
   let NUM_COLS = Math.ceil(canvas.width / CELL_WIDTH)
 
@@ -49,29 +49,42 @@ const runAutomata = (scale, rule) => new Promise((resolve) => {
     }
   }
 
+  let renderRow = (row, i) => {
+    ctx.fillStyle = 'rgb(200, 200, 200)'
+    for (let j = 0; j < row.length; j++) {
+        if (row[j]) {
+          ctx.fillRect(
+            j * CELL_WIDTH, i * CELL_HEIGHT,
+            CELL_WIDTH, CELL_HEIGHT
+          )
+        }
+      }
+  }
+
   let grid = Array(NUM_ROWS).fill(0)
     .map(x => Array(NUM_COLS).fill(false))
 
-  grid[0][Math.floor(grid[0].length / 2)] = true
+  grid[grid.length - 1][Math.floor(grid[0].length / 2)] = true
+  renderGrid(grid)
 
-  let rowIdx = 1
+  let rowIdx = NUM_ROWS - 2
   let id = setInterval(() => {
     grid[rowIdx] = grid[rowIdx].map((val, colIdx) => 
       rule(rowIdx, colIdx, grid)
     )
-    renderGrid(grid)
-    rowIdx++
-    if (rowIdx == NUM_ROWS) {
+    renderRow(grid[rowIdx], rowIdx)
+    rowIdx--
+    if (rowIdx == 0) {
       clearInterval(id)
       resolve()
     }
-  }, 50 * scale)
+  }, 20 * scale)
 })
 
 const loopRandomAutomata = () => {
   const randomRuleIdx = Math.floor(Math.random()*rules.length)
   const randomRule = getRule(randomRuleIdx)
-  const randomScale = Math.ceil(Math.random()*2)
+  const randomScale = Math.ceil(Math.random()*3)
   runAutomata(randomScale, randomRule)
   .then(() => loopRandomAutomata())
 }
