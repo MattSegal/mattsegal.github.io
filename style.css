@@ -15,18 +15,6 @@ body, canvas {
     background-color: rgb(240, 240, 240);
 }
 
-@media (max-height: 500px) {
-    body {
-        font-size: 8px;
-    }
-}
-
-@media (max-height: 400px) {
-    body {
-        font-size: 7px;
-    }
-}
-
 canvas {
     z-index: -1;
     position: absolute;
@@ -38,6 +26,24 @@ canvas {
     padding-top: 11em;
     height: 100%;
     width: 100%;
+}
+
+@media (max-height: 500px) {
+    body {
+        font-size: 8px;
+    }
+    .content {
+        padding-top: 8em;
+    }
+}
+
+@media (max-height: 400px) {
+    body {
+        font-size: 7px;
+    }
+    .content {
+        padding-top: 6em;
+    }
 }
 
 h1 {
