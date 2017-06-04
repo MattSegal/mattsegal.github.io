@@ -10,6 +10,7 @@ const MAX_SCALE = 3
 const MIN_CELL_LENGTH = 2 // px
 const MIN_LOOP_DELAY = 15 // ms
 
+
 // Initialise rendering
 const main = () => {
   const initialRule = ruleFactory(0)
@@ -23,9 +24,7 @@ const loopRandomAutomata = () => {
   const ruleIdx = Math.floor(Math.random() * rules.length)
   const scale = Math.ceil(Math.random() * MAX_SCALE)
   const startMiddle = Math.random() < 0.5
-
   const rule = ruleFactory(ruleIdx)
-
   runAutomata(rule, scale, startMiddle)
     .then(loopRandomAutomata)
 }
@@ -108,7 +107,6 @@ const rules = [
   [0, 1, 1, 1, 1, 0, 0, 0],   // Rule 30
   [0, 1, 1, 1, 1, 1, 1, 0],   // Rule 126
   [0, 0, 1, 1, 1, 1, 0, 0],
-  [1, 0, 1, 1, 0, 1, 0, 0],
   [0, 1, 1, 1, 0, 1, 1, 0],
   [0, 1, 1, 0, 1, 0, 1, 0],
   [1, 0, 1, 0, 0, 1, 0, 1],
