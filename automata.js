@@ -7,8 +7,8 @@
 const WHITE = 'rgb(240, 240, 240)'
 const BLACK = 'rgb(200, 200, 200)'
 const MAX_SCALE = 3
-const MIN_CELL_LENGTH = 2 // px
-const MIN_LOOP_DELAY = 15 // ms
+const MIN_CELL_LENGTH = 1 // px
+const MIN_LOOP_DELAY = 20 // ms
 
 
 // Initialise rendering
@@ -48,7 +48,8 @@ const runAutomata = (rule, scale, startMiddle) => new Promise((resolve) => {
   const NUM_ROWS = Math.ceil(canvas.height / CELL_LENGTH)
   const NUM_COLS = Math.ceil(canvas.width / CELL_LENGTH)
 
-  let renderGrid = (grid) => {
+  // Render the whole grid
+  const renderGrid = (grid) => {
     for (let i = 0; i < grid.length; i++) {
       for (let j = 0; j < grid[i].length; j++) {
         ctx.fillStyle =  grid[i][j] ? BLACK : WHITE
@@ -60,41 +61,70 @@ const runAutomata = (rule, scale, startMiddle) => new Promise((resolve) => {
     }
   }
 
-  let renderRow = (row, i) => {
-    ctx.fillStyle = BLACK
+  // Render just one row of the grid
+  const renderRow = (row, i) => {
     for (let j = 0; j < row.length; j++) {
-        if (row[j]) {
-          ctx.fillRect(
-            j * CELL_LENGTH, i * CELL_LENGTH,
-            CELL_LENGTH, CELL_LENGTH
-          )
-        }
-      }
+      ctx.fillStyle = row[j] ? BLACK : WHITE
+      ctx.fillRect(
+        j * CELL_LENGTH, i * CELL_LENGTH,
+        CELL_LENGTH, CELL_LENGTH
+      )
+    }
+  }
+
+
+  // Figure out the starting rows (in the centre)
+  let startRowBot
+  let startRowTop
+  if (NUM_ROWS % 2 === 0) {
+    // Even number of rows, pick the 2 middle rows
+    // Eg 6 rows, pick row idx 2, 3
+    startRowBot = NUM_ROWS / 2
+    startRowTop = startRowBot - 1
+  } else {
+    // Odd number of rows - pick the middle one
+    // eg. 5 rows, pick row idx 2
+    startRowTop = Math.floor(NUM_ROWS / 2)
+    startRowBot = startRowTop
   }
 
   // Initialise grid model
-  let grid = Array(NUM_ROWS).fill(0).map(row => Array(NUM_COLS).fill(false))
-  
-  // Seed initial values
+  // fill the top half with white, bottom half black
+  let grid = Array(NUM_ROWS).fill(0)
+    .map((row, rowIdx) => rowIdx > startRowBot
+      ? Array(NUM_COLS).fill(1)
+      : Array(NUM_COLS).fill(0)
+    )
+
+  // Seed initial values at the start
   if (startMiddle) {
-    grid[grid.length - 1][Math.floor(grid[0].length / 2)] = 1
+    grid[startRowTop][Math.floor(grid[0].length / 2)] = 1
   } else {
-    grid[grid.length - 1][0] = 1
-    grid[grid.length - 1][grid[0].length - 1] = 1
+    grid[startRowTop][Math.floor(grid[0].length / 2)] = 1
+    grid[startRowTop][0] = 1
+    grid[startRowTop][grid[0].length - 1] = 1
   }
 
-  // Clean the screen
+  // Clean the screen by rendering the initial grid
   renderGrid(grid)
 
-  // Render the automata, row-by-row, from the bottom up
-  let rowIdx = NUM_ROWS - 2
+  // Render the automata, row-by-row, from the middle out
+  let topRowIdx = startRowTop - 1
+  let botRowIdx = startRowBot + 1
   const id = setInterval(() => {
-    // Calculate next row
-    grid[rowIdx] = grid[rowIdx]
-      .map((val, colIdx) => rule(rowIdx, colIdx, grid))
-    renderRow(grid[rowIdx], rowIdx)
-    rowIdx--
-    if (rowIdx < 0) {
+    // Calculate next rows
+    grid[topRowIdx] = grid[topRowIdx].map((val, colIdx) => rule(topRowIdx, colIdx, grid, true))
+    let inverse = grid[topRowIdx].map((val, colIdx) =>  1 - val)
+    inverse.reverse()
+    grid[botRowIdx] = inverse
+
+    // Draw the updated grid rows
+    renderRow(grid[topRowIdx], topRowIdx)
+    renderRow(grid[botRowIdx], botRowIdx)
+    topRowIdx--
+    botRowIdx++
+
+    if (topRowIdx === 0) {
       clearInterval(id)
       setTimeout(resolve, LOOP_DELAY)
     }
@@ -113,15 +143,17 @@ const rules = [
 ]
 
 // Generate a chosen rule
-const ruleFactory = (ruleIdx) => (i,j, grid) => {
+const ruleFactory = (ruleIdx) => (i,j, grid, isIncreasing) => {
   const chosenRule = rules[ruleIdx]
-  const mid = grid[i + 1][j]
+  const inc = isIncreasing ? 1 : -1
+
+  const mid = grid[i + inc][j]
 
   const isLeftEdge = j === 0
-  const left = isLeftEdge ? 0 : grid[i + 1][j - 1]
+  const left = isLeftEdge ? 0 : grid[i + inc][j - 1]
 
-  const isRightEdge = j === grid[i + 1].length - 1
-  const right = isRightEdge ? 0 : grid[i + 1][j + 1]
+  const isRightEdge = j === grid[i + inc].length - 1
+  const right = isRightEdge ? 0 : grid[i + inc][j + 1]
 
   // Convert binary values (left, middle, right) to decimal array index
   const result = 4 * left + 2 * mid + 1 * right 
