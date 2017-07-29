@@ -8,7 +8,8 @@ const WHITE = 'rgb(240, 240, 240)'
 const BLACK = 'rgb(200, 200, 200)'
 const MAX_SCALE = 3
 const MIN_CELL_LENGTH = 1 // px
-const MIN_LOOP_DELAY = 20 // ms
+const MIN_LOOP_DELAY = 15 // ms
+const END_DELAY = 4000 // ms
 
 
 // Initialise rendering
@@ -125,8 +126,9 @@ const runAutomata = (rule, scale, startMiddle) => new Promise((resolve) => {
     botRowIdx++
 
     if (topRowIdx === 0) {
+      // Finish
       clearInterval(id)
-      setTimeout(resolve, LOOP_DELAY)
+      setTimeout(resolve, END_DELAY)
     }
   }, LOOP_DELAY)
 })
