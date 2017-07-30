@@ -7,8 +7,19 @@ html, body {
     height: 100%;
     width: 100%;
     overflow: hidden;
+}
+
+body {
     font-family: 'Slabo 27px', serif;
     font-size: 10px;
+    display: flex;
+    align-items: center;
+}
+
+@media (max-height: 600px) {
+    body {
+        font-size: 7px;
+    }
 }
 
 body, canvas {
@@ -23,28 +34,9 @@ canvas {
 }
 
 .content {
-    padding-top: 11em;
-    height: 100%;
     width: 100%;
 }
 
-@media (max-height: 500px) {
-    body {
-        font-size: 8px;
-    }
-    .content {
-        padding-top: 8em;
-    }
-}
-
-@media (max-height: 400px) {
-    body {
-        font-size: 7px;
-    }
-    .content {
-        padding-top: 6em;
-    }
-}
 
 h1 {
     text-align: center;
