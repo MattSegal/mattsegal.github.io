@@ -46,7 +46,7 @@
 
 	'use strict';
 
-	var _automata = __webpack_require__(2);
+	var _automata = __webpack_require__(1);
 
 	var _automata2 = _interopRequireDefault(_automata);
 
@@ -63,42 +63,6 @@
 
 /***/ }),
 /* 1 */
-/***/ (function(module, exports) {
-
-	"use strict";
-
-	// Rules used to generate cellular automata
-	var rules = [[0, 1, 1, 1, 1, 0, 0, 0], // Rule 30
-	[0, 1, 1, 1, 1, 1, 1, 0], // Rule 126
-	[0, 0, 1, 1, 1, 1, 0, 0], [0, 1, 1, 1, 0, 1, 1, 0], [0, 1, 1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 0, 1, 0, 1]];
-
-	// Generate a chosen rule
-	// Given a co-ordinate in a grid, calculate the value of the point
-	var ruleFactory = function ruleFactory(ruleIdx) {
-	  return function (i, j, grid) {
-	    var chosenRule = rules[ruleIdx];
-
-	    var mid = grid[i + 1][j];
-
-	    var isLeftEdge = j === 0;
-	    var left = isLeftEdge ? 0 : grid[i + 1][j - 1];
-
-	    var isRightEdge = j === grid[i + 1].length - 1;
-	    var right = isRightEdge ? 0 : grid[i + 1][j + 1];
-
-	    // Convert binary values (left, middle, right) to decimal array index
-	    var result = 4 * left + 2 * mid + 1 * right;
-	    return chosenRule[result];
-	  };
-	};
-
-	module.exports = {
-	  ruleFactory: ruleFactory,
-	  rules: rules
-	};
-
-/***/ }),
-/* 2 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -113,7 +77,7 @@
 	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     */
 
 
-	var _rules = __webpack_require__(1);
+	var _rules = __webpack_require__(2);
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -249,6 +213,42 @@
 	}();
 
 	exports.default = Automata;
+
+/***/ }),
+/* 2 */
+/***/ (function(module, exports) {
+
+	"use strict";
+
+	// Rules used to generate cellular automata
+	var rules = [[0, 1, 1, 1, 1, 0, 0, 0], // Rule 30
+	[0, 1, 1, 1, 1, 1, 1, 0], // Rule 126
+	[0, 0, 1, 1, 1, 1, 0, 0], [0, 1, 1, 1, 0, 1, 1, 0], [0, 1, 1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 0, 1, 0, 1]];
+
+	// Generate a chosen rule
+	// Given a co-ordinate in a grid, calculate the value of the point
+	var ruleFactory = function ruleFactory(ruleIdx) {
+	  return function (i, j, grid) {
+	    var chosenRule = rules[ruleIdx];
+
+	    var mid = grid[i + 1][j];
+
+	    var isLeftEdge = j === 0;
+	    var left = isLeftEdge ? 0 : grid[i + 1][j - 1];
+
+	    var isRightEdge = j === grid[i + 1].length - 1;
+	    var right = isRightEdge ? 0 : grid[i + 1][j + 1];
+
+	    // Convert binary values (left, middle, right) to decimal array index
+	    var result = 4 * left + 2 * mid + 1 * right;
+	    return chosenRule[result];
+	  };
+	};
+
+	module.exports = {
+	  ruleFactory: ruleFactory,
+	  rules: rules
+	};
 
 /***/ })
 /******/ ]);

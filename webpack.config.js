@@ -5,7 +5,7 @@ const config = {
     context: path.resolve('./src'),
     entry: './index',
     output: {
-        path: path.resolve('./docs/'),
+        path: path.resolve('./static/'),
         filename: "[name].js",
     },
     module: {
