@@ -1,11 +1,10 @@
 {
-  "name": "homepahe",
+  "name": "homepage",
   "version": "1.0.0",
   "description": "Build chain for homepage web app",
   "main": "index.js",
   "scripts": {
-    "dev": "webpack --watch --progress",
-    "web": "webpack-dev-server"
+    "dev": "webpack --watch --progress"
   },
   "author": "Matthew Segal",
   "license": "ISC",

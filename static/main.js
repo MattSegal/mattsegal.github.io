@@ -50,12 +50,17 @@
 
 	var _automata2 = _interopRequireDefault(_automata);
 
+	var _recursive = __webpack_require__(3);
+
+	var _recursive2 = _interopRequireDefault(_recursive);
+
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	// Draw random automata at random scales forever
 	var loopRandomAutomata = function loopRandomAutomata() {
-	  var automata = _automata2.default.getRandomAutomata();
-	  automata.run().then(loopRandomAutomata);
+	  var guess = Math.random();
+	  var animation = guess > 0.7 ? new _recursive2.default() : _automata2.default.getRandomAutomata();
+	  animation.run().then(loopRandomAutomata);
 	};
 
 	// Run script
@@ -249,6 +254,124 @@
 	  ruleFactory: ruleFactory,
 	  rules: rules
 	};
+
+/***/ }),
+/* 3 */
+/***/ (function(module, exports) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	var WHITE = 'rgb(240, 240, 240)';
+	var BLACK = 'rgb(200, 200, 200)';
+	var LOOP_DELAY = 3; // ms
+	var NUM_ITERS = 3280; // 3**8 / 2 for some reason
+
+	var Sierpinski = function () {
+	  function Sierpinski() {
+	    _classCallCheck(this, Sierpinski);
+
+	    var canvas = document.getElementById('canvas');
+	    canvas.width = window.innerWidth;
+	    canvas.height = window.innerHeight;
+	    this.ctx = canvas.getContext('2d');
+	    this.width = canvas.width;
+	    this.height = canvas.height;
+	    this.queue = [];
+	    // Push starting shape onto stack
+	    this.queue.push({
+	      x: 0, y: canvas.height, // bottom left corner
+	      width: canvas.width,
+	      height: canvas.height,
+	      dark: false,
+	      depth: 0
+	    });
+	  }
+
+	  _createClass(Sierpinski, [{
+	    key: 'run',
+	    value: function run() {
+	      var _this = this;
+
+	      return new Promise(function (resolve) {
+	        var counter = 0;
+	        var intervalId = setInterval(function () {
+	          var triangle = _this.queue.shift();
+	          _this.drawTriangle(triangle);
+	          _this.pushChildren(triangle);
+	          counter++;
+	          if (counter >= NUM_ITERS) {
+	            clearInterval(intervalId);
+	            resolve();
+	          }
+	        }, LOOP_DELAY);
+	      });
+	    }
+	  }, {
+	    key: 'pushChildren',
+	    value: function pushChildren(triangle) {
+	      // bottom left
+	      this.queue.push({
+	        x: triangle.x,
+	        y: triangle.y,
+	        width: triangle.width / 2,
+	        height: triangle.height / 2,
+	        dark: !triangle.dark,
+	        depth: triangle.depth + 1
+	      });
+	      // bottom right
+	      this.queue.push({
+	        x: triangle.x + triangle.width / 2,
+	        y: triangle.y,
+	        width: triangle.width / 2,
+	        height: triangle.height / 2,
+	        dark: !triangle.dark,
+	        depth: triangle.depth + 1
+	      });
+	      // top
+	      this.queue.push({
+	        x: triangle.x + triangle.width / 4,
+	        y: triangle.y - triangle.height / 2,
+	        width: triangle.width / 2,
+	        height: triangle.height / 2,
+	        dark: !triangle.dark,
+	        depth: triangle.depth + 1
+	      });
+	    }
+	  }, {
+	    key: 'drawTriangle',
+	    value: function drawTriangle(triangle) {
+	      this.ctx.beginPath();
+	      this.ctx.fillStyle = this.getColor(triangle.depth);
+	      this.ctx.moveTo(triangle.x, triangle.y);
+	      this.ctx.lineTo(triangle.x + triangle.width, triangle.y);
+	      this.ctx.lineTo(triangle.x + triangle.width / 2, triangle.y - triangle.height);
+	      this.ctx.closePath();
+	      this.ctx.fill();
+	    }
+	  }, {
+	    key: 'getColor',
+	    value: function getColor(depth) {
+	      var scale = 200 - 80 * depth % 200 + 30;
+	      if (depth % 2 == 0) {
+	        return 'rgb(255,' + scale + ',' + scale + ')';
+	      } else {
+	        return 'rgb(' + scale + ',' + scale + ',255)';
+	      }
+	    }
+	  }]);
+
+	  return Sierpinski;
+	}();
+
+	exports.default = Sierpinski;
 
 /***/ })
 /******/ ]);
