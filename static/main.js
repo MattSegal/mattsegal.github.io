@@ -84,6 +84,8 @@
 
 	var _rules = __webpack_require__(2);
 
+	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 	var WHITE = 'rgb(240, 240, 240)';
@@ -100,6 +102,7 @@
 	  function Automata(rule, scale, startMiddle) {
 	    _classCallCheck(this, Automata);
 
+	    this.scale = scale;
 	    this.rule = rule;
 	    var canvas = document.getElementById('canvas');
 	    canvas.width = window.innerWidth;
@@ -110,12 +113,13 @@
 	    this.cell_length = MIN_CELL_LENGTH * scale;
 	    var num_rows = 2 * Math.ceil(canvas.height / (2 * this.cell_length));
 	    var num_cols = 2 * Math.ceil(canvas.width / (2 * this.cell_length));
-	    var top = Math.floor(num_rows / 2); // row indices
-	    var bot = top;
+	    this.middle = Math.floor(num_rows / 2); // row indices
+	    var top = this.middle;
+	    var bot = this.middle;
 
 	    // Initialise grid model - fill the top half with white, bottom half black
 	    var grid = Array(num_rows).fill(0).map(function (row, rowIdx) {
-	      return rowIdx > bot ? Array(num_cols).fill(1) : Array(num_cols).fill(0);
+	      return rowIdx > bot ? Array(num_cols).fill(0) : Array(num_cols).fill(0);
 	    });
 
 	    // Seed initial values at the start
@@ -129,6 +133,8 @@
 	    this.grid = grid;
 	    this.top = top;
 	    this.bot = bot;
+
+	    this.colors = [100 + Math.floor(50 * Math.random()), 100 + Math.floor(50 * Math.random()), 100 + Math.floor(50 * Math.random())];
 	  }
 
 	  _createClass(Automata, [{
@@ -145,7 +151,8 @@
 	        var top = _this.top;
 	        var bot = _this.bot;
 	        // Clean the screen by rendering the initial grid
-	        _this.renderGrid();
+	        _this.renderInit();
+	        _this.renderRow(_this.grid[top], top, true);
 	        top--;
 	        bot++;
 
@@ -162,8 +169,8 @@
 	          _this.grid[bot] = inverse;
 
 	          // Draw the updated grid rows
-	          _this.renderRow(_this.grid[top], top);
-	          _this.renderRow(_this.grid[bot], bot);
+	          _this.renderRow(_this.grid[top], top, true);
+	          _this.renderRow(_this.grid[bot], bot, false);
 	          top--;
 	          bot++;
 
@@ -180,28 +187,47 @@
 	        }, false);
 	      });
 	    }
+
+	    // Draw the whole grid to the screen
+
 	  }, {
-	    key: 'renderGrid',
-	    value: function renderGrid() {
+	    key: 'renderInit',
+	    value: function renderInit() {
+	      var c = this.cell_length;
+	      this.ctx.fillStyle = WHITE;
 	      for (var i = 0; i < this.grid.length; i++) {
 	        for (var j = 0; j < this.grid[i].length; j++) {
-	          this.drawCell(i, j);
+	          this.ctx.fillRect(j * c, i * c, c, c);
 	        }
 	      }
 	    }
 	  }, {
 	    key: 'renderRow',
-	    value: function renderRow(row, i) {
+	    value: function renderRow(row, i, isTop) {
+	      var c = this.cell_length;
 	      for (var j = 0; j < row.length; j++) {
-	        this.drawCell(i, j);
+	        if (isTop === !!this.grid[i][j]) {
+	          this.ctx.fillStyle = this.getColor(i, isTop);
+	          this.ctx.fillRect(j * c, i * c, c, c);
+	        }
 	      }
 	    }
 	  }, {
-	    key: 'drawCell',
-	    value: function drawCell(i, j) {
-	      var c = this.cell_length;
-	      this.ctx.fillStyle = this.grid[i][j] ? BLACK : WHITE;
-	      this.ctx.fillRect(j * c, i * c, c, c);
+	    key: 'getColor',
+	    value: function getColor(i, isTop) {
+	      var start = 180;
+	      var diff = Math.max(this.middle - i, -start);
+	      diff = isTop ? diff : -diff;
+	      var colors = [].concat(_toConsumableArray(this.colors));
+
+	      if (isTop) {
+	        colors[1] += Math.floor(diff / 2 * this.scale);
+	        colors[2] += Math.floor(diff / 2 * this.scale);
+	      } else {
+	        colors[0] += Math.floor(diff / 2 * this.scale);
+	        colors[1] -= Math.floor(diff / 2 * this.scale);
+	      }
+	      return 'rgb(' + colors[0] + ', ' + colors[1] + ', ' + colors[2] + ')';
 	    }
 	  }], [{
 	    key: 'getRandomAutomata',

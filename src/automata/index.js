@@ -15,6 +15,7 @@ const END_DELAY = 3000 // ms
 // Draws the given automata to the screen, row-by-row
 export default class Automata {
   constructor(rule, scale, startMiddle) {
+    this.scale = scale
     this.rule = rule
     const canvas = document.getElementById('canvas')
     canvas.width  = window.innerWidth
@@ -25,13 +26,14 @@ export default class Automata {
     this.cell_length = MIN_CELL_LENGTH * scale  
     const num_rows = 2 * (Math.ceil(canvas.height / (2 * this.cell_length)))
     const num_cols = 2 * (Math.ceil(canvas.width / (2 * this.cell_length)))
-    let top = Math.floor(num_rows / 2) // row indices
-    let bot = top
+    this.middle = Math.floor(num_rows / 2) // row indices
+    let top = this.middle
+    let bot = this.middle
 
     // Initialise grid model - fill the top half with white, bottom half black
     const grid = Array(num_rows).fill(0)
       .map((row, rowIdx) => rowIdx > bot
-        ? Array(num_cols).fill(1)
+        ? Array(num_cols).fill(0)
         : Array(num_cols).fill(0)
       )
 
@@ -46,6 +48,12 @@ export default class Automata {
     this.grid = grid
     this.top = top
     this.bot = bot
+
+    this.colors = [
+      100 + Math.floor(50 * Math.random()),
+      100 + Math.floor(50 * Math.random()),
+      100 + Math.floor(50 * Math.random()),
+    ]
   }
 
   static getRandomAutomata() {
@@ -65,7 +73,8 @@ export default class Automata {
       let top = this.top
       let bot = this.bot
       // Clean the screen by rendering the initial grid
-      this.renderGrid()
+      this.renderInit()
+      this.renderRow(this.grid[top], top, true)
       top--
       bot++
 
@@ -78,8 +87,8 @@ export default class Automata {
         this.grid[bot] = inverse
 
         // Draw the updated grid rows
-        this.renderRow(this.grid[top], top)
-        this.renderRow(this.grid[bot], bot)
+        this.renderRow(this.grid[top], top, true)
+        this.renderRow(this.grid[bot], bot, false)
         top--
         bot++
 
@@ -97,23 +106,40 @@ export default class Automata {
     })
   }
 
-  renderGrid() {
+  // Draw the whole grid to the screen
+  renderInit() {
+    const c = this.cell_length
+    this.ctx.fillStyle = WHITE
     for (let i = 0; i < this.grid.length; i++) {
       for (let j = 0; j < this.grid[i].length; j++) {
-        this.drawCell(i, j)
+        this.ctx.fillRect(j * c, i * c, c, c)
       }
     }
   }
 
-  renderRow(row, i) {
+  renderRow(row, i, isTop) {
+    const c = this.cell_length
     for (let j = 0; j < row.length; j++) {
-      this.drawCell(i, j)
+      if (isTop === !!this.grid[i][j]) {
+        this.ctx.fillStyle = this.getColor(i, isTop)
+        this.ctx.fillRect(j * c, i * c, c, c)
+      }
     }
   }
 
-  drawCell(i, j) {
-    const c = this.cell_length
-    this.ctx.fillStyle = this.grid[i][j] ? BLACK : WHITE
-    this.ctx.fillRect(j * c, i * c, c, c)
+  getColor(i, isTop) {
+    const start = 180
+    let diff = Math.max(this.middle - i, -start)
+    diff = isTop ? diff : -diff 
+    const colors = [...this.colors]
+
+    if (isTop) {
+      colors[1] += Math.floor(diff / 2 * this.scale)
+      colors[2] += Math.floor(diff / 2 * this.scale)
+    } else {
+      colors[0] += Math.floor(diff / 2 * this.scale)
+      colors[1] -= Math.floor(diff / 2 * this.scale)
+    }
+    return `rgb(${colors[0]}, ${colors[1]}, ${colors[2]})`
   }
 }
