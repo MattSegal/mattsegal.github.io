@@ -48,12 +48,6 @@ export default class Automata {
     this.grid = grid
     this.top = top
     this.bot = bot
-
-    this.colors = [
-      100 + Math.floor(50 * Math.random()),
-      100 + Math.floor(50 * Math.random()),
-      100 + Math.floor(50 * Math.random()),
-    ]
   }
 
   static getRandomAutomata() {
@@ -131,7 +125,7 @@ export default class Automata {
     const start = 180
     let diff = Math.max(this.middle - i, -start)
     diff = isTop ? diff : -diff 
-    const colors = [...this.colors]
+    const colors = [125, 125, 125]
 
     if (isTop) {
       colors[1] += Math.floor(diff / 2 * this.scale)

@@ -84,8 +84,6 @@
 
 	var _rules = __webpack_require__(2);
 
-	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
-
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 	var WHITE = 'rgb(240, 240, 240)';
@@ -133,8 +131,6 @@
 	    this.grid = grid;
 	    this.top = top;
 	    this.bot = bot;
-
-	    this.colors = [100 + Math.floor(50 * Math.random()), 100 + Math.floor(50 * Math.random()), 100 + Math.floor(50 * Math.random())];
 	  }
 
 	  _createClass(Automata, [{
@@ -218,7 +214,7 @@
 	      var start = 180;
 	      var diff = Math.max(this.middle - i, -start);
 	      diff = isTop ? diff : -diff;
-	      var colors = [].concat(_toConsumableArray(this.colors));
+	      var colors = [125, 125, 125];
 
 	      if (isTop) {
 	        colors[1] += Math.floor(diff / 2 * this.scale);
@@ -297,48 +293,88 @@
 
 	var WHITE = 'rgb(240, 240, 240)';
 	var BLACK = 'rgb(200, 200, 200)';
-	var LOOP_DELAY = 3; // ms
+	var LOOP_DELAY = 50; // ms
 	var NUM_ITERS = 3280; // 3**8 / 2 for some reason
 
 	var Sierpinski = function () {
 	  function Sierpinski() {
 	    _classCallCheck(this, Sierpinski);
 
+	    this.colors = [[255, 20, 160], [200, 20, 200], [160, 20, 230], [125, 20, 255], [20, 0, 255], [255, 0, 255], [20, 20, 20], [60, 255, 60]];
+
 	    var canvas = document.getElementById('canvas');
-	    canvas.width = window.innerWidth;
-	    canvas.height = window.innerHeight;
+	    this.setSize(canvas);
 	    this.ctx = canvas.getContext('2d');
-	    this.width = canvas.width;
-	    this.height = canvas.height;
 	    this.queue = [];
 	    // Push starting shape onto stack
 	    this.queue.push({
-	      x: 0, y: canvas.height, // bottom left corner
-	      width: canvas.width,
-	      height: canvas.height,
+	      x: this.initX, y: this.initY,
+	      width: this.width,
+	      height: this.height,
 	      dark: false,
 	      depth: 0
 	    });
 	  }
 
 	  _createClass(Sierpinski, [{
+	    key: 'setSize',
+	    value: function setSize(canvas) {
+	      canvas.width = window.innerWidth;
+	      canvas.height = window.innerHeight;
+
+	      var heightToWidth = 1 / Math.tan(Math.PI / 5);
+	      var sizeByWidth = 0.95 * window.innerWidth;
+	      var sizeByHeight = 0.95 * window.innerHeight * heightToWidth;
+	      var size = Math.min(sizeByWidth, sizeByHeight);
+	      this.width = size;
+	      this.height = size / heightToWidth;
+
+	      // x and y reference triangle's bottom left corner
+	      this.initX = canvas.width / 2 - this.width / 2;
+	      this.initY = this.height + canvas.height / 2 - this.height / 2;
+	    }
+	  }, {
 	    key: 'run',
 	    value: function run() {
 	      var _this = this;
 
+	      this.counter = 0;
 	      return new Promise(function (resolve) {
-	        var counter = 0;
-	        var intervalId = setInterval(function () {
-	          var triangle = _this.queue.shift();
-	          _this.drawTriangle(triangle);
-	          _this.pushChildren(triangle);
-	          counter++;
-	          if (counter >= NUM_ITERS) {
-	            clearInterval(intervalId);
-	            resolve();
-	          }
-	        }, LOOP_DELAY);
+	        _this.runLoop(resolve);
+	        // let counter = 0
+	        // const intervalId = setInterval(() => {
+	        //   const triangle = this.queue.shift()
+	        //   this.drawTriangle(triangle)
+	        //   this.pushChildren(triangle)
+	        //   counter++
+	        //   if (counter >= NUM_ITERS) {
+	        //     clearInterval(intervalId)
+	        //     resolve()
+	        //   } 
+	        // }, LOOP_DELAY)
 	      });
+	    }
+	  }, {
+	    key: 'runLoop',
+	    value: function runLoop(resolve) {
+	      var _this2 = this;
+
+	      var triangle = this.queue.shift();
+	      this.drawTriangle(triangle);
+	      this.pushChildren(triangle);
+	      this.counter++;
+	      if (this.counter >= NUM_ITERS) {
+	        resolve();
+	      } else {
+	        setTimeout(function () {
+	          return _this2.runLoop(resolve);
+	        }, this.getDelay(triangle.depth));
+	      }
+	    }
+	  }, {
+	    key: 'getDelay',
+	    value: function getDelay(depth) {
+	      return LOOP_DELAY / depth;
 	    }
 	  }, {
 	    key: 'pushChildren',
@@ -382,15 +418,15 @@
 	      this.ctx.closePath();
 	      this.ctx.fill();
 	    }
+
+	    // I decided to hard code some colors after hours of messing around
+
 	  }, {
 	    key: 'getColor',
 	    value: function getColor(depth) {
-	      var scale = 200 - 80 * depth % 200 + 30;
-	      if (depth % 2 == 0) {
-	        return 'rgb(255,' + scale + ',' + scale + ')';
-	      } else {
-	        return 'rgb(' + scale + ',' + scale + ',255)';
-	      }
+	      // depth is 0 to 7
+	      var colors = this.colors[depth];
+	      return 'rgb(' + colors[0] + ', ' + colors[1] + ', ' + colors[2] + ')';
 	    }
 	  }]);
 
