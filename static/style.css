@@ -69,5 +69,12 @@ a:hover {
     text-decoration: underline;
 }
 
+h1, li {
+  text-shadow:
+   -1px -1px 0 #f0f0f0,  
+    1px -1px 0 #f0f0f0,
+    -1px 1px 0 #f0f0f0,
+     1px 1px 0 #f0f0f0;
+}
 
 
