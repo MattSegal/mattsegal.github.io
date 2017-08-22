@@ -311,7 +311,6 @@
 	      x: this.initX, y: this.initY,
 	      width: this.width,
 	      height: this.height,
-	      dark: false,
 	      depth: 0
 	    });
 	  }
@@ -340,18 +339,7 @@
 
 	      this.counter = 0;
 	      return new Promise(function (resolve) {
-	        _this.runLoop(resolve);
-	        // let counter = 0
-	        // const intervalId = setInterval(() => {
-	        //   const triangle = this.queue.shift()
-	        //   this.drawTriangle(triangle)
-	        //   this.pushChildren(triangle)
-	        //   counter++
-	        //   if (counter >= NUM_ITERS) {
-	        //     clearInterval(intervalId)
-	        //     resolve()
-	        //   } 
-	        // }, LOOP_DELAY)
+	        return _this.runLoop(resolve);
 	      });
 	    }
 	  }, {
@@ -368,42 +356,34 @@
 	      } else {
 	        setTimeout(function () {
 	          return _this2.runLoop(resolve);
-	        }, this.getDelay(triangle.depth));
+	        }, LOOP_DELAY / triangle.depth);
 	      }
-	    }
-	  }, {
-	    key: 'getDelay',
-	    value: function getDelay(depth) {
-	      return LOOP_DELAY / depth;
 	    }
 	  }, {
 	    key: 'pushChildren',
 	    value: function pushChildren(triangle) {
-	      // bottom left
+	      // Bottom left triangle
 	      this.queue.push({
 	        x: triangle.x,
 	        y: triangle.y,
 	        width: triangle.width / 2,
 	        height: triangle.height / 2,
-	        dark: !triangle.dark,
 	        depth: triangle.depth + 1
 	      });
-	      // bottom right
+	      // Bottom right triangle
 	      this.queue.push({
 	        x: triangle.x + triangle.width / 2,
 	        y: triangle.y,
 	        width: triangle.width / 2,
 	        height: triangle.height / 2,
-	        dark: !triangle.dark,
 	        depth: triangle.depth + 1
 	      });
-	      // top
+	      // Top triangle
 	      this.queue.push({
 	        x: triangle.x + triangle.width / 4,
 	        y: triangle.y - triangle.height / 2,
 	        width: triangle.width / 2,
 	        height: triangle.height / 2,
-	        dark: !triangle.dark,
 	        depth: triangle.depth + 1
 	      });
 	    }
