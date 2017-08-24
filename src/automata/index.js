@@ -128,11 +128,11 @@ export default class Automata {
     const colors = [125, 125, 125]
 
     if (isTop) {
-      colors[1] += Math.floor(diff / 2 * this.scale)
-      colors[2] += Math.floor(diff / 2 * this.scale)
+      colors[1] += Math.floor(diff / 2.5 * this.scale)
+      colors[2] += Math.floor(diff / 2.5 * this.scale)
     } else {
-      colors[0] += Math.floor(diff / 2 * this.scale)
-      colors[1] -= Math.floor(diff / 2 * this.scale)
+      colors[0] += Math.floor(diff / 2.5 * this.scale)
+      colors[1] -= Math.floor(diff / 2.5 * this.scale)
     }
     return `rgb(${colors[0]}, ${colors[1]}, ${colors[2]})`
   }

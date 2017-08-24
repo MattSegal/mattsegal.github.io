@@ -54,12 +54,28 @@
 
 	var _recursive2 = _interopRequireDefault(_recursive);
 
+	var _portal = __webpack_require__(4);
+
+	var _portal2 = _interopRequireDefault(_portal);
+
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	var lastChoice = void 0;
 
 	// Draw random automata at random scales forever
 	var loopRandomAutomata = function loopRandomAutomata() {
-	  var guess = Math.random();
-	  var animation = guess > 0.7 ? new _recursive2.default() : _automata2.default.getRandomAutomata();
+	  var choice = Math.random();
+	  var animation = void 0;
+	  if (choice < 0.2 && lastChoice !== _portal2.default) {
+	    animation = new _portal2.default();
+	    lastChoice = _portal2.default;
+	  } else if (choice < 0.4 && lastChoice !== _recursive2.default) {
+	    animation = new _recursive2.default();
+	    lastChoice = _recursive2.default;
+	  } else {
+	    animation = _automata2.default.getRandomAutomata();
+	    lastChoice = _automata2.default;
+	  }
 	  animation.run().then(loopRandomAutomata);
 	};
 
@@ -217,11 +233,11 @@
 	      var colors = [125, 125, 125];
 
 	      if (isTop) {
-	        colors[1] += Math.floor(diff / 2 * this.scale);
-	        colors[2] += Math.floor(diff / 2 * this.scale);
+	        colors[1] += Math.floor(diff / 2.5 * this.scale);
+	        colors[2] += Math.floor(diff / 2.5 * this.scale);
 	      } else {
-	        colors[0] += Math.floor(diff / 2 * this.scale);
-	        colors[1] -= Math.floor(diff / 2 * this.scale);
+	        colors[0] += Math.floor(diff / 2.5 * this.scale);
+	        colors[1] -= Math.floor(diff / 2.5 * this.scale);
 	      }
 	      return 'rgb(' + colors[0] + ', ' + colors[1] + ', ' + colors[2] + ')';
 	    }
@@ -414,6 +430,336 @@
 	}();
 
 	exports.default = Sierpinski;
+
+/***/ }),
+/* 4 */
+/***/ (function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	var _triangle = __webpack_require__(5);
+
+	var _triangle2 = _interopRequireDefault(_triangle);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	var RPS = 1 / 60; // rotations per second
+	var LOOP_DELAY = 30; // ms per timestep
+	var BIRTH_RATE = 10; // timesteps per triangle
+	var GROWTH_RATE = 1; // percent growth per timestep
+	var NUM_ITERS = 800;
+	var MAX_TRIANGLES = 50;
+	var INIT_SIZE = 20;
+	var INIT_COUNT = 18;
+
+	var Portal = function () {
+	  function Portal() {
+	    _classCallCheck(this, Portal);
+
+	    var canvas = document.getElementById('canvas');
+	    canvas.width = window.innerWidth;
+	    canvas.height = window.innerHeight;
+	    this.ctx = canvas.getContext('2d');
+	    this.initX = canvas.width / 2;
+	    this.initY = canvas.height / 2;
+	    this.rotation = RPS * (LOOP_DELAY / 1000) * (2 * Math.PI);
+	    this.triangles = [new _triangle2.default(this.initX, this.initY, INIT_SIZE, 0)];
+	  }
+
+	  _createClass(Portal, [{
+	    key: 'run',
+	    value: function run() {
+	      var _this = this;
+
+	      this.counter = 0;
+	      return new Promise(function (resolve) {
+	        return _this.runLoop(resolve);
+	      });
+	    }
+	  }, {
+	    key: 'runLoop',
+	    value: function runLoop(resolve) {
+	      var _this2 = this;
+
+	      var preRender = this.triangles.length < INIT_COUNT;
+	      var _iteratorNormalCompletion = true;
+	      var _didIteratorError = false;
+	      var _iteratorError = undefined;
+
+	      try {
+	        for (var _iterator = this.triangles[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+	          var triangle = _step.value;
+
+	          if (!preRender) {
+	            this.drawShape(triangle);
+	          }
+	          triangle.rotate(this.rotation);
+	          triangle.grow(1 + GROWTH_RATE / 100);
+	        }
+
+	        // Add new baby triangles
+	      } catch (err) {
+	        _didIteratorError = true;
+	        _iteratorError = err;
+	      } finally {
+	        try {
+	          if (!_iteratorNormalCompletion && _iterator.return) {
+	            _iterator.return();
+	          }
+	        } finally {
+	          if (_didIteratorError) {
+	            throw _iteratorError;
+	          }
+	        }
+	      }
+
+	      if (this.counter > 0 && this.counter % BIRTH_RATE === 0) {
+	        this.triangles.push(new _triangle2.default(this.initX, this.initY, INIT_SIZE, 0));
+	      }
+
+	      // Kill triangles who are too old to be useful
+	      if (this.triangles.length > MAX_TRIANGLES) {
+	        this.triangles.shift();
+	      }
+
+	      this.counter++;
+	      if (this.counter >= NUM_ITERS) {
+	        this.finish(resolve);
+	      } else if (preRender) {
+	        this.runLoop(resolve);
+	      } else {
+	        setTimeout(function () {
+	          return _this2.runLoop(resolve);
+	        }, LOOP_DELAY);
+	      }
+	    }
+	  }, {
+	    key: 'finish',
+	    value: function finish(resolve) {
+	      var _this3 = this;
+
+	      this.counter++;
+	      var _iteratorNormalCompletion2 = true;
+	      var _didIteratorError2 = false;
+	      var _iteratorError2 = undefined;
+
+	      try {
+	        for (var _iterator2 = this.triangles[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+	          var triangle = _step2.value;
+
+	          this.drawShape(triangle);
+	          triangle.rotate(this.rotation);
+	          triangle.grow(1 + GROWTH_RATE / 100);
+	        }
+	      } catch (err) {
+	        _didIteratorError2 = true;
+	        _iteratorError2 = err;
+	      } finally {
+	        try {
+	          if (!_iteratorNormalCompletion2 && _iterator2.return) {
+	            _iterator2.return();
+	          }
+	        } finally {
+	          if (_didIteratorError2) {
+	            throw _iteratorError2;
+	          }
+	        }
+	      }
+
+	      if (this.counter % 4 == 0) {
+	        this.triangles.pop();
+	        if (this.triangles.length < 20) {
+	          return resolve();
+	        }
+	      }
+	      setTimeout(function () {
+	        return _this3.finish(resolve);
+	      }, LOOP_DELAY);
+	    }
+	  }, {
+	    key: 'drawShape',
+	    value: function drawShape(shape) {
+	      var points = shape.getPoints();
+	      this.ctx.beginPath();
+	      this.ctx.fillStyle = this.getColor(shape.radius);
+	      this.ctx.moveTo(points[0][0], points[0][1]);
+	      var _iteratorNormalCompletion3 = true;
+	      var _didIteratorError3 = false;
+	      var _iteratorError3 = undefined;
+
+	      try {
+	        for (var _iterator3 = points.slice(1)[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+	          var point = _step3.value;
+
+	          this.ctx.lineTo(point[0], point[1]);
+	        }
+	      } catch (err) {
+	        _didIteratorError3 = true;
+	        _iteratorError3 = err;
+	      } finally {
+	        try {
+	          if (!_iteratorNormalCompletion3 && _iterator3.return) {
+	            _iterator3.return();
+	          }
+	        } finally {
+	          if (_didIteratorError3) {
+	            throw _iteratorError3;
+	          }
+	        }
+	      }
+
+	      this.ctx.closePath();
+	      this.ctx.fill();
+	    }
+	  }, {
+	    key: 'getColor',
+	    value: function getColor(scalar) {
+	      var color = Math.abs(Math.floor(scalar / 6 % 512) - 256);
+	      return 'rgb(' + color + ', ' + color + ', ' + color + ')';
+	    }
+	  }]);
+
+	  return Portal;
+	}();
+
+	exports.default = Portal;
+
+/***/ }),
+/* 5 */
+/***/ (function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	var _radialshape = __webpack_require__(6);
+
+	var _radialshape2 = _interopRequireDefault(_radialshape);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+	var Triangle = function (_RadialShape) {
+	    _inherits(Triangle, _RadialShape);
+
+	    function Triangle() {
+	        _classCallCheck(this, Triangle);
+
+	        return _possibleConstructorReturn(this, (Triangle.__proto__ || Object.getPrototypeOf(Triangle)).apply(this, arguments));
+	    }
+
+	    _createClass(Triangle, [{
+	        key: 'getPoints',
+
+
+	        // Get triangle points
+	        value: function getPoints() {
+	            return [[this._getX(0), this._getY(0)], [this._getX(1), this._getY(1)], [this._getX(2), this._getY(2)]];
+	        }
+	    }, {
+	        key: '_getY',
+	        value: function _getY(pointIdx) {
+	            var offset = 2 * pointIdx * Math.PI / 3;
+	            return this.y - this.radius * Math.cos(this.angle + offset);
+	        }
+	    }, {
+	        key: '_getX',
+	        value: function _getX(pointIdx) {
+	            var offset = 2 * pointIdx * Math.PI / 3;
+	            return this.x + this.radius * Math.sin(this.angle + offset);
+	        }
+	    }]);
+
+	    return Triangle;
+	}(_radialshape2.default);
+
+	exports.default = Triangle;
+
+/***/ }),
+/* 6 */
+/***/ (function(module, exports) {
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	/*
+	Vertical angle is 0
+	Counter-clockwise is +ve
+	The centroid of the triangle is (x, y)
+	*/
+
+	var RadialShape = function () {
+	    function RadialShape(x, y, radius, angle) {
+	        _classCallCheck(this, RadialShape);
+
+	        this.x = x;
+	        this.y = y;
+	        this.radius = radius, this.angle = angle;
+	    }
+
+	    // Rotate shape by angle
+
+
+	    _createClass(RadialShape, [{
+	        key: "rotate",
+	        value: function rotate(angle) {
+	            this.angle += angle % (2 * Math.PI);
+	        }
+
+	        // Translate centroid of shape
+
+	    }, {
+	        key: "translate",
+	        value: function translate(x, y) {
+	            this.x += x;
+	            this.y += y;
+	        }
+
+	        // Grow the radius by a factor
+
+	    }, {
+	        key: "grow",
+	        value: function grow(factor) {
+	            this.radius = this.radius * factor;
+	        }
+
+	        // Get shape points
+
+	    }, {
+	        key: "getPoints",
+	        value: function getPoints() {
+	            return [];
+	        }
+	    }]);
+
+	    return RadialShape;
+	}();
+
+	exports.default = RadialShape;
 
 /***/ })
 /******/ ]);
