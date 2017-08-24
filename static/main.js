@@ -54,12 +54,23 @@
 
 	var _recursive2 = _interopRequireDefault(_recursive);
 
+	var _portal = __webpack_require__(4);
+
+	var _portal2 = _interopRequireDefault(_portal);
+
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	// Draw random automata at random scales forever
 	var loopRandomAutomata = function loopRandomAutomata() {
 	  var guess = Math.random();
-	  var animation = guess > 0.7 ? new _recursive2.default() : _automata2.default.getRandomAutomata();
+	  var animation = void 0;
+	  if (guess < 0) {
+	    animation = _automata2.default.getRandomAutomata();
+	  } else if (guess < 0) {
+	    animation = new _recursive2.default();
+	  } else {
+	    animation = new _portal2.default();
+	  }
 	  animation.run().then(loopRandomAutomata);
 	};
 
@@ -414,6 +425,208 @@
 	}();
 
 	exports.default = Sierpinski;
+
+/***/ }),
+/* 4 */
+/***/ (function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	var _triangle = __webpack_require__(5);
+
+	var _triangle2 = _interopRequireDefault(_triangle);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	var LOOP_DELAY = 200; // ms
+	var NUM_ITERS = 100; // 3**8 / 2 for some reason
+
+	var Portal = function () {
+	  function Portal() {
+	    _classCallCheck(this, Portal);
+
+	    this.colors = [[255, 20, 160], [200, 20, 200], [160, 20, 230], [125, 20, 255], [20, 0, 255], [255, 0, 255], [20, 20, 20], [60, 255, 60]];
+
+	    var canvas = document.getElementById('canvas');
+	    canvas.width = window.innerWidth;
+	    canvas.height = window.innerHeight;
+	    this.ctx = canvas.getContext('2d');
+	    this.initX = canvas.width / 2;
+	    this.initY = canvas.height / 2;
+	    this.triangles = [new _triangle2.default(this.initX, this.initY, 100, 0)];
+	  }
+
+	  _createClass(Portal, [{
+	    key: 'run',
+	    value: function run() {
+	      var _this = this;
+
+	      this.counter = 0;
+	      return new Promise(function (resolve) {
+	        return _this.runLoop(resolve);
+	      });
+	    }
+	  }, {
+	    key: 'runLoop',
+	    value: function runLoop(resolve) {
+	      var _this2 = this;
+
+	      var _iteratorNormalCompletion = true;
+	      var _didIteratorError = false;
+	      var _iteratorError = undefined;
+
+	      try {
+	        for (var _iterator = this.triangles[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+	          var triangle = _step.value;
+
+	          this.drawTriangle(triangle);
+	          triangle.rotate(Math.PI / 6);
+	          triangle.grow(100);
+	        }
+	      } catch (err) {
+	        _didIteratorError = true;
+	        _iteratorError = err;
+	      } finally {
+	        try {
+	          if (!_iteratorNormalCompletion && _iterator.return) {
+	            _iterator.return();
+	          }
+	        } finally {
+	          if (_didIteratorError) {
+	            throw _iteratorError;
+	          }
+	        }
+	      }
+
+	      this.triangles.push(new _triangle2.default(this.initX, this.initY, 100, 0));
+	      this.counter++;
+	      if (this.counter >= NUM_ITERS) {
+	        resolve();
+	      } else {
+	        setTimeout(function () {
+	          return _this2.runLoop(resolve);
+	        }, LOOP_DELAY);
+	      }
+	    }
+	  }, {
+	    key: 'drawTriangle',
+	    value: function drawTriangle(triangle) {
+	      var points = triangle.getPoints();
+	      var colorIdx = triangle.size % 800 / 100;
+	      console.log(colorIdx);
+	      this.ctx.beginPath();
+	      this.ctx.fillStyle = this.getColor(colorIdx);
+	      this.ctx.moveTo(points[0][0], points[0][1]);
+	      this.ctx.lineTo(points[1][0], points[1][1]);
+	      this.ctx.lineTo(points[2][0], points[2][1]);
+	      this.ctx.closePath();
+	      this.ctx.fill();
+	    }
+
+	    // I decided to hard code some colors after hours of messing around
+
+	  }, {
+	    key: 'getColor',
+	    value: function getColor(idx) {
+	      // depth is 0 to 7
+	      var colors = this.colors[idx];
+	      return 'rgb(' + colors[0] + ', ' + colors[1] + ', ' + colors[2] + ')';
+	    }
+	  }]);
+
+	  return Portal;
+	}();
+
+	exports.default = Portal;
+
+/***/ }),
+/* 5 */
+/***/ (function(module, exports) {
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	/*
+	Vertical angle is 0
+	Counter-clockwise is +ve
+	The centroid of the triangle is (x, y)
+	*/
+
+	var Triangle = function () {
+	    function Triangle(x, y, size, angle) {
+	        _classCallCheck(this, Triangle);
+
+	        this.x = x;
+	        this.y = y;
+	        this.size = size, this.angle = angle;
+	    }
+
+	    // Rotate triangle by angle
+
+
+	    _createClass(Triangle, [{
+	        key: "rotate",
+	        value: function rotate(angle) {
+	            this.angle += angle % (2 * Math.PI);
+	        }
+
+	        // Translate centroid of triangle
+
+	    }, {
+	        key: "translate",
+	        value: function translate(x, y) {
+	            this.x += x;
+	            this.y += y;
+	        }
+
+	        // Grow the size by a factor
+
+	    }, {
+	        key: "grow",
+	        value: function grow(factor) {
+	            this.size *= factor;
+	        }
+
+	        // Get triangle points
+
+	    }, {
+	        key: "getPoints",
+	        value: function getPoints() {
+	            return [[this._getX(0), this._getY(0)], [this._getX(1), this._getY(1)], [this._getX(2), this._getY(2)]];
+	        }
+	    }, {
+	        key: "_getY",
+	        value: function _getY(pointIdx) {
+	            var offset = 2 * pointIdx * Math.PI / 3;
+	            return this.y - this.size * Math.cos(this.angle + offset);
+	        }
+	    }, {
+	        key: "_getX",
+	        value: function _getX(pointIdx) {
+	            var offset = 2 * pointIdx * Math.PI / 3;
+	            return this.x + this.size * Math.sin(this.angle + offset);
+	        }
+	    }]);
+
+	    return Triangle;
+	}();
+
+	exports.default = Triangle;
 
 /***/ })
 /******/ ]);
