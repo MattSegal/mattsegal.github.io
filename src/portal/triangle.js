@@ -23,9 +23,9 @@ export default class Triangle {
         this.y += y
     }
 
-    // Grow the size by a factor
-    grow(factor) {
-        this.size *= factor
+    // Grow the size by a number
+    grow(growth) {
+        this.size += growth
     }
 
     // Get triangle points
