@@ -5,10 +5,10 @@ The centroid of the triangle is (x, y)
 */
 
 export default class Triangle {
-    constructor(x, y, size, angle) {
+    constructor(x, y, radius, angle) {
         this.x = x
         this.y = y
-        this.size = size,
+        this.radius = radius,
         this.angle = angle
     }
 
@@ -23,9 +23,9 @@ export default class Triangle {
         this.y += y
     }
 
-    // Grow the size by a number
-    grow(growth) {
-        this.size += growth
+    // Grow the radius by a number
+    grow(factor) {
+        this.radius = this.radius * factor
     }
 
     // Get triangle points
@@ -39,11 +39,11 @@ export default class Triangle {
 
     _getY(pointIdx) {
         const offset = 2 *pointIdx * Math.PI / 3
-        return this.y - this.size * Math.cos(this.angle + offset)
+        return this.y - this.radius * Math.cos(this.angle + offset)
     }
 
     _getX(pointIdx) {
         const offset = 2 * pointIdx * Math.PI / 3
-        return this.x + this.size * Math.sin(this.angle + offset)
+        return this.x + this.radius * Math.sin(this.angle + offset)
     }
 }

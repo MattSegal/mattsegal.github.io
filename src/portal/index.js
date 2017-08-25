@@ -1,7 +1,8 @@
 import Triangle from './triangle'
 
-const LOOP_DELAY = 200 // ms
+const LOOP_DELAY = 50 // ms
 const NUM_ITERS = 100 // 3**8 / 2 for some reason
+const MAX_TRIANGLES = 10
 
 export default class Portal {
   constructor() {
@@ -23,10 +24,23 @@ export default class Portal {
     for (let triangle of this.triangles) {
       this.drawTriangle(triangle)
       triangle.rotate(Math.PI / 6)
-      triangle.grow(100)
+      triangle.grow(1.1)
     }
 
-    this.triangles.push(new Triangle(this.initX, this.initY, 100, 0))
+    // Add new baby triangles
+    if (
+        this.counter > 0 &&
+        this.counter % 5 === 0
+    ) {
+      this.triangles.push(new Triangle(this.initX, this.initY, 100, 0))
+    }
+
+    // Kill triangles who are too old to be useful
+    if (this.triangles.length > MAX_TRIANGLES) {
+      this.triangles.shift()
+    }
+
+
     this.counter++
     if (this.counter >= NUM_ITERS) {
       resolve()
@@ -37,10 +51,8 @@ export default class Portal {
 
   drawTriangle(triangle) {
     const points = triangle.getPoints()
-    const colorIdx = triangle.size % 800 / 100
-    console.log(colorIdx)
     this.ctx.beginPath()
-    this.ctx.fillStyle = this.getColor(colorIdx)
+    this.ctx.fillStyle = this.getColor(triangle.radius)
     this.ctx.moveTo(points[0][0], points[0][1])
     this.ctx.lineTo(points[1][0], points[1][1])
     this.ctx.lineTo(points[2][0], points[2][1])
@@ -48,20 +60,8 @@ export default class Portal {
     this.ctx.fill()
   }
 
-  // I decided to hard code some colors after hours of messing around
-  getColor(idx) { // depth is 0 to 7
-    const colors = this.colors[idx]
-    return `rgb(${colors[0]}, ${colors[1]}, ${colors[2]})`
+  getColor(scalar) { 
+    const color = Math.floor(scalar % 255)
+    return `rgb(${color}, ${color}, ${color})`
   }
-
-  colors = [
-    [255, 20, 160],
-    [200, 20, 200],
-    [160, 20, 230],
-    [125, 20, 255],
-    [20, 0, 255],
-    [255, 0, 255],
-    [20, 20, 20],
-    [60, 255, 60],
-  ]
 }

@@ -446,14 +446,13 @@
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-	var LOOP_DELAY = 200; // ms
+	var LOOP_DELAY = 50; // ms
 	var NUM_ITERS = 100; // 3**8 / 2 for some reason
+	var MAX_TRIANGLES = 10;
 
 	var Portal = function () {
 	  function Portal() {
 	    _classCallCheck(this, Portal);
-
-	    this.colors = [[255, 20, 160], [200, 20, 200], [160, 20, 230], [125, 20, 255], [20, 0, 255], [255, 0, 255], [20, 20, 20], [60, 255, 60]];
 
 	    var canvas = document.getElementById('canvas');
 	    canvas.width = window.innerWidth;
@@ -489,8 +488,10 @@
 
 	          this.drawTriangle(triangle);
 	          triangle.rotate(Math.PI / 6);
-	          triangle.grow(100);
+	          triangle.grow(1.1);
 	        }
+
+	        // Add new baby triangles
 	      } catch (err) {
 	        _didIteratorError = true;
 	        _iteratorError = err;
@@ -506,7 +507,15 @@
 	        }
 	      }
 
-	      this.triangles.push(new _triangle2.default(this.initX, this.initY, 100, 0));
+	      if (this.counter > 0 && this.counter % 5 === 0) {
+	        this.triangles.push(new _triangle2.default(this.initX, this.initY, 100, 0));
+	      }
+
+	      // Kill triangles who are too old to be useful
+	      if (this.triangles.length > MAX_TRIANGLES) {
+	        this.triangles.shift();
+	      }
+
 	      this.counter++;
 	      if (this.counter >= NUM_ITERS) {
 	        resolve();
@@ -520,25 +529,19 @@
 	    key: 'drawTriangle',
 	    value: function drawTriangle(triangle) {
 	      var points = triangle.getPoints();
-	      var colorIdx = triangle.size % 800 / 100;
-	      console.log(colorIdx);
 	      this.ctx.beginPath();
-	      this.ctx.fillStyle = this.getColor(colorIdx);
+	      this.ctx.fillStyle = this.getColor(triangle.radius);
 	      this.ctx.moveTo(points[0][0], points[0][1]);
 	      this.ctx.lineTo(points[1][0], points[1][1]);
 	      this.ctx.lineTo(points[2][0], points[2][1]);
 	      this.ctx.closePath();
 	      this.ctx.fill();
 	    }
-
-	    // I decided to hard code some colors after hours of messing around
-
 	  }, {
 	    key: 'getColor',
-	    value: function getColor(idx) {
-	      // depth is 0 to 7
-	      var colors = this.colors[idx];
-	      return 'rgb(' + colors[0] + ', ' + colors[1] + ', ' + colors[2] + ')';
+	    value: function getColor(scalar) {
+	      var color = Math.floor(scalar % 255);
+	      return 'rgb(' + color + ', ' + color + ', ' + color + ')';
 	    }
 	  }]);
 
@@ -568,12 +571,12 @@
 	*/
 
 	var Triangle = function () {
-	    function Triangle(x, y, size, angle) {
+	    function Triangle(x, y, radius, angle) {
 	        _classCallCheck(this, Triangle);
 
 	        this.x = x;
 	        this.y = y;
-	        this.size = size, this.angle = angle;
+	        this.radius = radius, this.angle = angle;
 	    }
 
 	    // Rotate triangle by angle
@@ -594,12 +597,12 @@
 	            this.y += y;
 	        }
 
-	        // Grow the size by a factor
+	        // Grow the radius by a number
 
 	    }, {
 	        key: "grow",
 	        value: function grow(factor) {
-	            this.size *= factor;
+	            this.radius = this.radius * factor;
 	        }
 
 	        // Get triangle points
@@ -613,13 +616,13 @@
 	        key: "_getY",
 	        value: function _getY(pointIdx) {
 	            var offset = 2 * pointIdx * Math.PI / 3;
-	            return this.y - this.size * Math.cos(this.angle + offset);
+	            return this.y - this.radius * Math.cos(this.angle + offset);
 	        }
 	    }, {
 	        key: "_getX",
 	        value: function _getX(pointIdx) {
 	            var offset = 2 * pointIdx * Math.PI / 3;
-	            return this.x + this.size * Math.sin(this.angle + offset);
+	            return this.x + this.radius * Math.sin(this.angle + offset);
 	        }
 	    }]);
 
