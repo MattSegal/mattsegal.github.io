@@ -1,13 +1,24 @@
 'use strict'
 import Automata from 'automata'
 import Sierpinski from 'recursive'
+import Portal from 'portal'
+
+let lastChoice
 
 // Draw random automata at random scales forever
 const loopRandomAutomata = () => {
-  const guess = Math.random()
-  const animation = guess > 0.7
-    ? new Sierpinski()
-    : Automata.getRandomAutomata()
+  const choice = Math.random()
+  let animation
+  if (choice < 0.2 && lastChoice !== Portal) {
+    animation = new Portal()
+    lastChoice = Portal
+  } else if (choice < 0.4 && lastChoice !== Sierpinski) {
+    animation = new Sierpinski()
+    lastChoice = Sierpinski
+  } else {
+    animation = Automata.getRandomAutomata()
+    lastChoice = Automata
+  }
   animation.run().then(loopRandomAutomata)
 }
 
