@@ -70,10 +70,10 @@
 	var loopRandomAutomata = function loopRandomAutomata() {
 	  var choice = Math.random();
 	  var animation = void 0;
-	  if (choice < 0.2 && lastChoice !== _portal2.default) {
+	  if (choice < 0.33 && lastChoice !== _portal2.default) {
 	    animation = new _portal2.default();
 	    lastChoice = _portal2.default;
-	  } else if (choice < 0.4 && lastChoice !== _recursive2.default) {
+	  } else if (choice < 0.66 && lastChoice !== _recursive2.default) {
 	    animation = new _recursive2.default();
 	    lastChoice = _recursive2.default;
 	  } else {

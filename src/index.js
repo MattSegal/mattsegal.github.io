@@ -10,10 +10,10 @@ let lastChoice
 const loopRandomAutomata = () => {
   const choice = Math.random()
   let animation
-  if (choice < 0.2 && lastChoice !== Portal) {
+  if (choice < 0.33 && lastChoice !== Portal) {
     animation = new Portal()
     lastChoice = Portal
-  } else if (choice < 0.4 && lastChoice !== Sierpinski) {
+  } else if (choice < 0.66 && lastChoice !== Sierpinski) {
     animation = new Sierpinski()
     lastChoice = Sierpinski
   } else {
