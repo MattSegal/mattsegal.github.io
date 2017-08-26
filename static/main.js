@@ -58,6 +58,10 @@
 
 	var _portal2 = _interopRequireDefault(_portal);
 
+	var _colors = __webpack_require__(7);
+
+	var _colors2 = _interopRequireDefault(_colors);
+
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	var lastChoice = void 0;
@@ -447,6 +451,10 @@
 
 	var _triangle2 = _interopRequireDefault(_triangle);
 
+	var _colors = __webpack_require__(7);
+
+	var _colors2 = _interopRequireDefault(_colors);
+
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -459,10 +467,15 @@
 	var MAX_TRIANGLES = 50;
 	var INIT_SIZE = 20;
 	var INIT_COUNT = 18;
+	var INIT_ROTATION = RPS * (LOOP_DELAY / 1000) * (2 * Math.PI);
 
 	var Portal = function () {
 	  function Portal() {
 	    _classCallCheck(this, Portal);
+
+	    this.periodic = function (value, max) {
+	      return Math.abs(value % (2 * max) - max);
+	    };
 
 	    var canvas = document.getElementById('canvas');
 	    canvas.width = window.innerWidth;
@@ -470,8 +483,11 @@
 	    this.ctx = canvas.getContext('2d');
 	    this.initX = canvas.width / 2;
 	    this.initY = canvas.height / 2;
-	    this.rotation = RPS * (LOOP_DELAY / 1000) * (2 * Math.PI);
+	    this.rotation = INIT_ROTATION;
 	    this.triangles = [new _triangle2.default(this.initX, this.initY, INIT_SIZE, 0)];
+
+	    var initColor = 2 * Math.PI * Math.random();
+	    this.colorWheel = new _colors2.default(initColor, 1, 1);
 	  }
 
 	  _createClass(Portal, [{
@@ -528,6 +544,14 @@
 	      // Kill triangles who are too old to be useful
 	      if (this.triangles.length > MAX_TRIANGLES) {
 	        this.triangles.shift();
+	      }
+
+	      // Change colors
+	      this.colorWheel.rotate(this.counter / 50000);
+
+	      // Speed up rotation
+	      if (this.counter % 100 === 0) {
+	        this.rotation += INIT_ROTATION / 2;
 	      }
 
 	      this.counter++;
@@ -622,8 +646,9 @@
 	  }, {
 	    key: 'getColor',
 	    value: function getColor(scalar) {
-	      var color = Math.abs(Math.floor(scalar / 6 % 512) - 256);
-	      return 'rgb(' + color + ', ' + color + ', ' + color + ')';
+	      this.colorWheel.val = this.periodic(scalar / 1200, 1);
+	      this.colorWheel.sat = this.periodic(1 - scalar / 800, 1);
+	      return this.colorWheel.asCSS();
 	    }
 	  }]);
 
@@ -760,6 +785,93 @@
 	}();
 
 	exports.default = RadialShape;
+
+/***/ }),
+/* 7 */
+/***/ (function(module, exports) {
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	/*
+	The ColorWheel allows us to work with colors using
+	Hue/Saturation/Value (HSV)  and then convert it to 
+	Red/Green/Blue (RGB) for rendering
+
+	HSV: 0 ≤ H < 2PI, 0 ≤ S ≤ 1 and 0 ≤ V ≤ 1:
+	RGB: 0 ≤ R, G, B ≤ 255
+	*/
+
+	var ColorWheel = function () {
+	  function ColorWheel(hue, sat, val) {
+	    _classCallCheck(this, ColorWheel);
+
+	    this.huePrimeLookup = function (x, c) {
+	      return [[c, x, 0], [x, c, 0], [0, c, x], [0, x, c], [x, 0, c], [c, 0, x], [0, 0, 0]];
+	    };
+
+	    this.hue = hue;
+	    this.sat = sat;
+	    this.val = val;
+	  }
+
+	  // Rotate hue in radians
+
+
+	  _createClass(ColorWheel, [{
+	    key: "rotate",
+	    value: function rotate(angle) {
+	      this.hue = (this.hue + angle) % (2 * Math.PI);
+	    }
+
+	    // Converts HSV to CSS compatible string
+
+	  }, {
+	    key: "asCSS",
+	    value: function asCSS() {
+	      var _asRGB = this.asRGB(),
+	          _asRGB2 = _slicedToArray(_asRGB, 3),
+	          red = _asRGB2[0],
+	          green = _asRGB2[1],
+	          blue = _asRGB2[2];
+
+	      return "rgb(" + red + ", " + green + ", " + blue + ")";
+	    }
+
+	    // Converts HSV to RGB
+
+	  }, {
+	    key: "asRGB",
+	    value: function asRGB() {
+	      // #1 - calculate inscrutable intermediate values
+	      var h = this.hue / (Math.PI / 3);
+	      var c = this.val * this.sat;
+	      var x = c * (1 - Math.abs(h % 2 - 1));
+	      var o = this.val - c;
+
+	      // #2 - smash them together
+	      var idx = Math.floor(h);
+	      return this.huePrimeLookup(x, c)[idx].map(function (color) {
+	        return color + o;
+	      }).map(function (color) {
+	        return Math.round(255 * color);
+	      });
+	    }
+	  }]);
+
+	  return ColorWheel;
+	}();
+
+	exports.default = ColorWheel;
 
 /***/ })
 /******/ ]);

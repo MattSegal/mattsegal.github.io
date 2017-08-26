@@ -2,6 +2,7 @@
 import Automata from 'automata'
 import Sierpinski from 'recursive'
 import Portal from 'portal'
+import ColorWheel from 'colors'
 
 let lastChoice
 

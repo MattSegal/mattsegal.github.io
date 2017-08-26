@@ -1,4 +1,5 @@
 import Triangle from './triangle'
+import ColorWheel from 'colors'
 
 const RPS = 1 / 60       // rotations per second
 const LOOP_DELAY = 30     // ms per timestep
@@ -8,6 +9,7 @@ const NUM_ITERS = 800
 const MAX_TRIANGLES = 50
 const INIT_SIZE = 20
 const INIT_COUNT = 18
+const INIT_ROTATION = RPS * (LOOP_DELAY / 1000) * (2 * Math.PI)
 
 export default class Portal {
   constructor() {
@@ -17,8 +19,11 @@ export default class Portal {
     this.ctx = canvas.getContext('2d')
     this.initX = canvas.width / 2
     this.initY = canvas.height / 2
-    this.rotation = RPS * (LOOP_DELAY / 1000) * (2 * Math.PI)  
+    this.rotation = INIT_ROTATION
     this.triangles = [new Triangle(this.initX, this.initY, INIT_SIZE, 0)]
+    
+    const initColor = 2 * Math.PI * Math.random()
+    this.colorWheel = new ColorWheel(initColor, 1, 1)
   }
 
   run() {
@@ -44,6 +49,14 @@ export default class Portal {
     // Kill triangles who are too old to be useful
     if (this.triangles.length > MAX_TRIANGLES) {
       this.triangles.shift()
+    }
+
+    // Change colors
+    this.colorWheel.rotate(this.counter / 50000)
+
+    // Speed up rotation
+    if (this.counter % 100 === 0) {
+      this.rotation += INIT_ROTATION / 2
     }
 
     this.counter++
@@ -86,7 +99,10 @@ export default class Portal {
   }
 
   getColor(scalar) { 
-    const color = Math.abs(Math.floor((scalar / 6) % 512) - 256)
-    return `rgb(${color}, ${color}, ${color})`
+    this.colorWheel.val = this.periodic(scalar / 1200, 1)
+    this.colorWheel.sat = this.periodic(1 - scalar / 800, 1)
+    return this.colorWheel.asCSS()
   }
+
+  periodic = (value, max) => Math.abs(value % (2 * max) - max)
 }
