@@ -299,7 +299,7 @@
 
 /***/ }),
 /* 3 */
-/***/ (function(module, exports) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -308,6 +308,12 @@
 	});
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	var _colors = __webpack_require__(7);
+
+	var _colors2 = _interopRequireDefault(_colors);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -320,12 +326,11 @@
 	  function Sierpinski() {
 	    _classCallCheck(this, Sierpinski);
 
-	    this.colors = [[255, 20, 160], [200, 20, 200], [160, 20, 230], [125, 20, 255], [20, 0, 255], [255, 0, 255], [20, 20, 20], [60, 255, 60]];
-
 	    var canvas = document.getElementById('canvas');
 	    this.setSize(canvas);
 	    this.ctx = canvas.getContext('2d');
 	    this.queue = [];
+	    this.initColor = 2 * Math.PI * Math.random();
 	    // Push starting shape onto stack
 	    this.queue.push({
 	      x: this.initX, y: this.initY,
@@ -418,15 +423,15 @@
 	      this.ctx.closePath();
 	      this.ctx.fill();
 	    }
-
-	    // I decided to hard code some colors after hours of messing around
-
 	  }, {
 	    key: 'getColor',
 	    value: function getColor(depth) {
 	      // depth is 0 to 7
-	      var colors = this.colors[depth];
-	      return 'rgb(' + colors[0] + ', ' + colors[1] + ', ' + colors[2] + ')';
+	      this.colorWheel = new _colors2.default(this.initColor, 1, 1);
+	      var angle = (Math.pow(depth, 1.4) + depth) * (Math.PI / 10);
+	      this.colorWheel.rotate(angle);
+	      this.colorWheel.sat = 0.5 + depth / (7 * 2);
+	      return this.colorWheel.asCSS();
 	    }
 	  }]);
 

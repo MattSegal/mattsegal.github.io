@@ -2,6 +2,7 @@ const WHITE = 'rgb(240, 240, 240)'
 const BLACK = 'rgb(200, 200, 200)'
 const LOOP_DELAY = 50 // ms
 const NUM_ITERS = 3280 // 3**8 / 2 for some reason
+import ColorWheel from 'colors'
 
 export default class Sierpinski {
   constructor() {
@@ -9,6 +10,7 @@ export default class Sierpinski {
     this.setSize(canvas)
     this.ctx = canvas.getContext('2d')
     this.queue = []
+    this.initColor = 2 * Math.PI * Math.random()
     // Push starting shape onto stack
     this.queue.push({
       x: this.initX, y: this.initY, 
@@ -88,20 +90,12 @@ export default class Sierpinski {
     this.ctx.fill()
   }
 
-  // I decided to hard code some colors after hours of messing around
-  getColor(depth) { // depth is 0 to 7
-    const colors = this.colors[depth]
-    return `rgb(${colors[0]}, ${colors[1]}, ${colors[2]})`
+  getColor(depth) { 
+    // depth is 0 to 7
+    this.colorWheel = new ColorWheel(this.initColor, 1, 1)
+    const angle = (depth**1.4 + depth) * (Math.PI / 10)
+    this.colorWheel.rotate(angle)
+    this.colorWheel.sat = 0.5 + depth / (7 * 2)
+    return this.colorWheel.asCSS()
   }
-
-  colors = [
-    [255, 20, 160],
-    [200, 20, 200],
-    [160, 20, 230],
-    [125, 20, 255],
-    [20, 0, 255],
-    [255, 0, 255],
-    [20, 20, 20],
-    [60, 255, 60],
-  ]
 }
