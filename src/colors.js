@@ -17,7 +17,7 @@ export default class ColorWheel {
 
   // Rotate hue in radians
   rotate(angle) {
-    this.hue = (this.hue + angle) % (2 * Math.PI)
+    this.hue = (2 * Math.PI + this.hue + angle) % (2 * Math.PI)
   }
 
   // Converts HSV to CSS compatible string

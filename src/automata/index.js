@@ -2,11 +2,12 @@
   Automata - Draws a bunch of cellular automata to an HTML5 canvas
   Inspired by http://blog.stephenwolfram.com/2017/06/oh-my-gosh-its-covered-in-rule-30s/
 */
+import ColorWheel from 'colors'
 import {ruleFactory, rules} from './rules'
 
 const WHITE = 'rgb(240, 240, 240)'
 const BLACK = 'rgb(200, 200, 200)'
-const MAX_SCALE = 3
+const MAX_SCALE = 4
 const MIN_CELL_LENGTH = 1 // px
 const MIN_LOOP_DELAY = 15 // ms
 const END_DELAY = 3000 // ms
@@ -14,7 +15,8 @@ const END_DELAY = 3000 // ms
 
 // Draws the given automata to the screen, row-by-row
 export default class Automata {
-  constructor(rule, scale, startMiddle) {
+  constructor(rule, scale, seed) {
+    this.color = 2 * Math.PI * Math.random()
     this.scale = scale
     this.rule = rule
     const canvas = document.getElementById('canvas')
@@ -38,12 +40,16 @@ export default class Automata {
       )
 
     // Seed initial values at the start
-    if (startMiddle) {
+    if (seed < 0.33) {
       grid[top][Math.floor(grid[0].length / 2)] = 1
-    } else {
+    } else if (seed < 0.66) {
       grid[top][Math.floor(grid[0].length / 2)] = 1
       grid[top][0] = 1
       grid[top][grid[0].length - 1] = 1
+    } else {
+      for (let i = 0; i < 4; i++) {
+        grid[top][Math.floor(Math.random() * grid[0].length)] = 1
+      }
     }
     this.grid = grid
     this.top = top
@@ -52,10 +58,10 @@ export default class Automata {
 
   static getRandomAutomata() {
     const ruleIdx = Math.floor(Math.random() * rules.length)
-    const scale = Math.ceil(Math.random() * MAX_SCALE)
-    const startMiddle = Math.random() < 0.5
+    const scale = 2 //Math.ceil(Math.random() * MAX_SCALE)
+    const seed = Math.random()
     const rule = ruleFactory(ruleIdx)
-    return new Automata(rule, scale, startMiddle)
+    return new Automata(rule, scale, seed)
   }
 
   resize() {
@@ -122,18 +128,11 @@ export default class Automata {
   }
 
   getColor(i, isTop) {
-    const start = 180
-    let diff = Math.max(this.middle - i, -start)
-    diff = isTop ? diff : -diff 
-    const colors = [125, 125, 125]
-
-    if (isTop) {
-      colors[1] += Math.floor(diff / 2.5 * this.scale)
-      colors[2] += Math.floor(diff / 2.5 * this.scale)
-    } else {
-      colors[0] += Math.floor(diff / 2.5 * this.scale)
-      colors[1] -= Math.floor(diff / 2.5 * this.scale)
-    }
-    return `rgb(${colors[0]}, ${colors[1]}, ${colors[2]})`
+    const colorWheel = new ColorWheel(this.color, 1, 1)
+    const distance = Math.abs((this.middle - i) / this.middle)
+    colorWheel.val = (1 - distance) + Math.random() * distance
+    const angle = this.color + 2 * distance + 0.5 * Math.PI * Math.random() 
+    colorWheel.rotate(angle)
+    return colorWheel.asCSS()
   }
 }
