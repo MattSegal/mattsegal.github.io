@@ -13,7 +13,7 @@ const loopRandomAutomata = () => {
   if (choice < 0.33 && lastChoice !== Portal) {
     animation = new Portal()
     lastChoice = Portal
-  } else if (choice < 0.33 && lastChoice !== Sierpinski) {
+  } else if (choice < 0.66 && lastChoice !== Sierpinski) {
     animation = new Sierpinski()
     lastChoice = Sierpinski
   } else {

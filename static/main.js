@@ -73,7 +73,7 @@
 	  if (choice < 0.33 && lastChoice !== _portal2.default) {
 	    animation = new _portal2.default();
 	    lastChoice = _portal2.default;
-	  } else if (choice < 0.33 && lastChoice !== _recursive2.default) {
+	  } else if (choice < 0.66 && lastChoice !== _recursive2.default) {
 	    animation = new _recursive2.default();
 	    lastChoice = _recursive2.default;
 	  } else {
