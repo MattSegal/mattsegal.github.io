@@ -2,26 +2,17 @@
 import Automata from 'automata'
 import Sierpinski from 'recursive'
 import Portal from 'portal'
-import ColorWheel from 'colors'
+import Navigator from 'navigator'
 
-let lastChoice
+const nav = new Navigator()
+nav.addAnimation('automata', Automata)
+nav.addAnimation('sierpinski', Sierpinski)
+nav.addAnimation('portal', Portal)
 
-// Draw random automata at random scales forever
-const loopRandomAutomata = () => {
-  const choice = Math.random()
-  let animation
-  if (choice < 0.33 && lastChoice !== Portal) {
-    animation = new Portal()
-    lastChoice = Portal
-  } else if (choice < 0.66 && lastChoice !== Sierpinski) {
-    animation = new Sierpinski()
-    lastChoice = Sierpinski
-  } else {
-    animation = Automata.getRandomAutomata()
-    lastChoice = Automata
-  }
-  animation.run().then(loopRandomAutomata)
+// Draw random animations forever
+const loop = () => {
+  nav.navigateRandom().then(loop)
 }
 
 // Run script
-loopRandomAutomata()
+loop()

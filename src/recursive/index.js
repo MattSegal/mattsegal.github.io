@@ -11,6 +11,7 @@ export default class Sierpinski {
     this.ctx = canvas.getContext('2d')
     this.queue = []
     this.initColor = 2 * Math.PI * Math.random()
+    this.counter = 0
     // Push starting shape onto stack
     this.queue.push({
       x: this.initX, y: this.initY, 
@@ -19,6 +20,25 @@ export default class Sierpinski {
       depth: 0
     })
   }
+
+  static run() {
+    const sierpinski = new Sierpinski()
+    return new Promise(resolve => sierpinski.runLoop(resolve))
+  }
+
+
+  runLoop(resolve) {
+    const triangle = this.queue.shift()
+    this.drawTriangle(triangle)
+    this.pushChildren(triangle)
+    this.counter++
+    if (this.counter >= NUM_ITERS) {
+      resolve()
+    } else {
+      setTimeout(() => this.runLoop(resolve), LOOP_DELAY / triangle.depth)
+    }
+  }
+
 
   setSize(canvas) {
     canvas.width  = window.innerWidth
@@ -36,23 +56,7 @@ export default class Sierpinski {
     this.initY = this.height + canvas.height / 2 - this.height / 2
   }
 
-  run() {
-    this.counter = 0
-    return new Promise(resolve => this.runLoop(resolve))
-  }
-
-  runLoop(resolve) {
-    const triangle = this.queue.shift()
-    this.drawTriangle(triangle)
-    this.pushChildren(triangle)
-    this.counter++
-    if (this.counter >= NUM_ITERS) {
-      resolve()
-    } else {
-      setTimeout(() => this.runLoop(resolve), LOOP_DELAY / triangle.depth)
-    }
-  }
-
+  
   pushChildren(triangle) {
     // Bottom left triangle
     this.queue.push({

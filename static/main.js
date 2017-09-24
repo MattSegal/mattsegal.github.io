@@ -50,7 +50,7 @@
 
 	var _automata2 = _interopRequireDefault(_automata);
 
-	var _recursive = __webpack_require__(3);
+	var _recursive = __webpack_require__(4);
 
 	var _recursive2 = _interopRequireDefault(_recursive);
 
@@ -58,33 +58,24 @@
 
 	var _portal2 = _interopRequireDefault(_portal);
 
-	var _colors = __webpack_require__(4);
+	var _navigator = __webpack_require__(8);
 
-	var _colors2 = _interopRequireDefault(_colors);
+	var _navigator2 = _interopRequireDefault(_navigator);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	var lastChoice = void 0;
+	var nav = new _navigator2.default();
+	nav.addAnimation('automata', _automata2.default);
+	nav.addAnimation('sierpinski', _recursive2.default);
+	nav.addAnimation('portal', _portal2.default);
 
-	// Draw random automata at random scales forever
-	var loopRandomAutomata = function loopRandomAutomata() {
-	  var choice = Math.random();
-	  var animation = void 0;
-	  if (choice < 0.33 && lastChoice !== _portal2.default) {
-	    animation = new _portal2.default();
-	    lastChoice = _portal2.default;
-	  } else if (choice < 0.66 && lastChoice !== _recursive2.default) {
-	    animation = new _recursive2.default();
-	    lastChoice = _recursive2.default;
-	  } else {
-	    animation = _automata2.default.getRandomAutomata();
-	    lastChoice = _automata2.default;
-	  }
-	  animation.run().then(loopRandomAutomata);
+	// Draw random animations forever
+	var loop = function loop() {
+	  nav.navigateRandom().then(loop);
 	};
 
 	// Run script
-	loopRandomAutomata();
+	loop();
 
 /***/ }),
 /* 1 */
@@ -102,22 +93,22 @@
 	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     */
 
 
-	var _colors = __webpack_require__(4);
+	var _colors = __webpack_require__(2);
 
 	var _colors2 = _interopRequireDefault(_colors);
 
-	var _rules = __webpack_require__(2);
+	var _rules = __webpack_require__(3);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 	var WHITE = 'rgb(240, 240, 240)';
-	var BLACK = 'rgb(200, 200, 200)';
+	var BLACK = 'rgb(120, 120, 120)';
 	var MAX_SCALE = 4;
 	var MIN_CELL_LENGTH = 1; // px
-	var MIN_LOOP_DELAY = 15; // ms
-	var END_DELAY = 3000; // ms
+	var MIN_LOOP_DELAY = 12; // ms
+	var END_DELAY = 4000; // ms
 
 
 	// Draws the given automata to the screen, row-by-row
@@ -165,54 +156,53 @@
 	  }
 
 	  _createClass(Automata, [{
-	    key: 'resize',
-	    value: function resize() {
-	      // todo - just cancel the animation
-	    }
-	  }, {
-	    key: 'run',
-	    value: function run() {
+	    key: 'runLoop',
+	    value: function runLoop(resolve, cancel) {
 	      var _this = this;
 
-	      return new Promise(function (resolve) {
-	        var top = _this.top;
-	        var bot = _this.bot;
-	        // Clean the screen by rendering the initial grid
-	        _this.renderInit();
+	      var top = this.top;
+	      var bot = this.bot;
+
+	      // Clean the screen by rendering the initial grid
+	      this.renderInit();
+	      this.renderRow(this.grid[top], top, true);
+	      top--;
+	      bot++;
+
+	      // Render the automata, row-by-row, from the middle out
+	      var intervalId = setInterval(function () {
+	        // Calculate next rows
+	        _this.grid[top] = _this.grid[top].map(function (val, colIdx) {
+	          return _this.rule(top, colIdx, _this.grid);
+	        });
+	        var inverse = _this.grid[top].map(function (val, colIdx) {
+	          return 1 - val;
+	        });
+	        inverse.reverse();
+	        _this.grid[bot] = inverse;
+
+	        // Draw the updated grid rows
 	        _this.renderRow(_this.grid[top], top, true);
+	        _this.renderRow(_this.grid[bot], bot, false);
 	        top--;
 	        bot++;
 
-	        // Render the automata, row-by-row, from the middle out
-	        var intervalId = setInterval(function () {
-	          // Calculate next rows
-	          _this.grid[top] = _this.grid[top].map(function (val, colIdx) {
-	            return _this.rule(top, colIdx, _this.grid);
-	          });
-	          var inverse = _this.grid[top].map(function (val, colIdx) {
-	            return 1 - val;
-	          });
-	          inverse.reverse();
-	          _this.grid[bot] = inverse;
-
-	          // Draw the updated grid rows
-	          _this.renderRow(_this.grid[top], top, true);
-	          _this.renderRow(_this.grid[bot], bot, false);
-	          top--;
-	          bot++;
-
-	          if (top === 0) {
-	            clearInterval(intervalId);
-	            setTimeout(resolve, END_DELAY);
-	          }
-	        }, _this.loop_delay);
-
-	        // Cancel on resizes
-	        window.addEventListener('resize', function () {
+	        if (cancel) {
 	          clearInterval(intervalId);
 	          resolve();
-	        }, false);
-	      });
+	        }
+
+	        if (top === 0) {
+	          clearInterval(intervalId);
+	          setTimeout(resolve, END_DELAY);
+	        }
+	      }, this.loop_delay);
+
+	      // Cancel on resizes
+	      window.addEventListener('resize', function () {
+	        clearInterval(intervalId);
+	        resolve();
+	      }, false);
 	    }
 
 	    // Draw the whole grid to the screen
@@ -242,21 +232,26 @@
 	  }, {
 	    key: 'getColor',
 	    value: function getColor(i, isTop) {
-	      var colorWheel = new _colors2.default(this.color, 1, 1);
+	      if (!isTop) {
+	        return BLACK;
+	      }
+	      var colorWheel = new _colors2.default(this.color, 0.5, 0.8);
 	      var distance = Math.abs((this.middle - i) / this.middle);
-	      colorWheel.val = 1 - distance + Math.random() * distance;
-	      var angle = this.color + 2 * distance + 0.5 * Math.PI * Math.random();
+	      var angle = this.color + 2 * distance;
 	      colorWheel.rotate(angle);
 	      return colorWheel.asCSS();
 	    }
 	  }], [{
-	    key: 'getRandomAutomata',
-	    value: function getRandomAutomata() {
+	    key: 'run',
+	    value: function run(cancel) {
 	      var ruleIdx = Math.floor(Math.random() * _rules.rules.length);
 	      var scale = 2; //Math.ceil(Math.random() * MAX_SCALE)
 	      var seed = Math.random();
 	      var rule = (0, _rules.ruleFactory)(ruleIdx);
-	      return new Automata(rule, scale, seed);
+	      var automata = new Automata(rule, scale, seed);
+	      return new Promise(function (resolve) {
+	        return automata.runLoop(resolve, cancel);
+	      });
 	    }
 	  }]);
 
@@ -267,185 +262,6 @@
 
 /***/ }),
 /* 2 */
-/***/ (function(module, exports) {
-
-	"use strict";
-
-	// Rules used to generate cellular automata
-	var rules = [[0, 1, 1, 1, 1, 0, 0, 0], // Rule 30
-	[0, 1, 1, 1, 1, 1, 1, 0], // Rule 126
-	[0, 0, 1, 1, 1, 1, 0, 0], [0, 1, 1, 1, 0, 1, 1, 0], [0, 1, 1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 0, 1, 0, 1]];
-
-	// Generate a chosen rule
-	// Given a co-ordinate in a grid, calculate the value of the point
-	var ruleFactory = function ruleFactory(ruleIdx) {
-	  return function (i, j, grid) {
-	    var chosenRule = rules[ruleIdx];
-
-	    var mid = grid[i + 1][j];
-
-	    var isLeftEdge = j === 0;
-	    var left = isLeftEdge ? 0 : grid[i + 1][j - 1];
-
-	    var isRightEdge = j === grid[i + 1].length - 1;
-	    var right = isRightEdge ? 0 : grid[i + 1][j + 1];
-
-	    // Convert binary values (left, middle, right) to decimal array index
-	    var result = 4 * left + 2 * mid + 1 * right;
-	    return chosenRule[result];
-	  };
-	};
-
-	module.exports = {
-	  ruleFactory: ruleFactory,
-	  rules: rules
-	};
-
-/***/ }),
-/* 3 */
-/***/ (function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-
-	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-	var _colors = __webpack_require__(4);
-
-	var _colors2 = _interopRequireDefault(_colors);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-	var WHITE = 'rgb(240, 240, 240)';
-	var BLACK = 'rgb(200, 200, 200)';
-	var LOOP_DELAY = 50; // ms
-	var NUM_ITERS = 3280; // 3**8 / 2 for some reason
-
-	var Sierpinski = function () {
-	  function Sierpinski() {
-	    _classCallCheck(this, Sierpinski);
-
-	    var canvas = document.getElementById('canvas');
-	    this.setSize(canvas);
-	    this.ctx = canvas.getContext('2d');
-	    this.queue = [];
-	    this.initColor = 2 * Math.PI * Math.random();
-	    // Push starting shape onto stack
-	    this.queue.push({
-	      x: this.initX, y: this.initY,
-	      width: this.width,
-	      height: this.height,
-	      depth: 0
-	    });
-	  }
-
-	  _createClass(Sierpinski, [{
-	    key: 'setSize',
-	    value: function setSize(canvas) {
-	      canvas.width = window.innerWidth;
-	      canvas.height = window.innerHeight;
-
-	      var heightToWidth = 1 / Math.tan(Math.PI / 5);
-	      var sizeByWidth = 0.95 * window.innerWidth;
-	      var sizeByHeight = 0.95 * window.innerHeight * heightToWidth;
-	      var size = Math.min(sizeByWidth, sizeByHeight);
-	      this.width = size;
-	      this.height = size / heightToWidth;
-
-	      // x and y reference triangle's bottom left corner
-	      this.initX = canvas.width / 2 - this.width / 2;
-	      this.initY = this.height + canvas.height / 2 - this.height / 2;
-	    }
-	  }, {
-	    key: 'run',
-	    value: function run() {
-	      var _this = this;
-
-	      this.counter = 0;
-	      return new Promise(function (resolve) {
-	        return _this.runLoop(resolve);
-	      });
-	    }
-	  }, {
-	    key: 'runLoop',
-	    value: function runLoop(resolve) {
-	      var _this2 = this;
-
-	      var triangle = this.queue.shift();
-	      this.drawTriangle(triangle);
-	      this.pushChildren(triangle);
-	      this.counter++;
-	      if (this.counter >= NUM_ITERS) {
-	        resolve();
-	      } else {
-	        setTimeout(function () {
-	          return _this2.runLoop(resolve);
-	        }, LOOP_DELAY / triangle.depth);
-	      }
-	    }
-	  }, {
-	    key: 'pushChildren',
-	    value: function pushChildren(triangle) {
-	      // Bottom left triangle
-	      this.queue.push({
-	        x: triangle.x,
-	        y: triangle.y,
-	        width: triangle.width / 2,
-	        height: triangle.height / 2,
-	        depth: triangle.depth + 1
-	      });
-	      // Bottom right triangle
-	      this.queue.push({
-	        x: triangle.x + triangle.width / 2,
-	        y: triangle.y,
-	        width: triangle.width / 2,
-	        height: triangle.height / 2,
-	        depth: triangle.depth + 1
-	      });
-	      // Top triangle
-	      this.queue.push({
-	        x: triangle.x + triangle.width / 4,
-	        y: triangle.y - triangle.height / 2,
-	        width: triangle.width / 2,
-	        height: triangle.height / 2,
-	        depth: triangle.depth + 1
-	      });
-	    }
-	  }, {
-	    key: 'drawTriangle',
-	    value: function drawTriangle(triangle) {
-	      this.ctx.beginPath();
-	      this.ctx.fillStyle = this.getColor(triangle.depth);
-	      this.ctx.moveTo(triangle.x, triangle.y);
-	      this.ctx.lineTo(triangle.x + triangle.width, triangle.y);
-	      this.ctx.lineTo(triangle.x + triangle.width / 2, triangle.y - triangle.height);
-	      this.ctx.closePath();
-	      this.ctx.fill();
-	    }
-	  }, {
-	    key: 'getColor',
-	    value: function getColor(depth) {
-	      // depth is 0 to 7
-	      this.colorWheel = new _colors2.default(this.initColor, 1, 1);
-	      var angle = (Math.pow(depth, 1.4) + depth) * (Math.PI / 10);
-	      this.colorWheel.rotate(angle);
-	      this.colorWheel.sat = 0.5 + depth / (7 * 2);
-	      return this.colorWheel.asCSS();
-	    }
-	  }]);
-
-	  return Sierpinski;
-	}();
-
-	exports.default = Sierpinski;
-
-/***/ }),
-/* 4 */
 /***/ (function(module, exports) {
 
 	"use strict";
@@ -532,6 +348,187 @@
 	exports.default = ColorWheel;
 
 /***/ }),
+/* 3 */
+/***/ (function(module, exports) {
+
+	"use strict";
+
+	// Rules used to generate cellular automata
+	var rules = [[0, 1, 1, 1, 1, 0, 0, 0], // Rule 30
+	[0, 1, 1, 1, 1, 1, 1, 0], // Rule 126
+	[0, 0, 1, 1, 1, 1, 0, 0],
+	// [0, 1, 1, 1, 0, 1, 1, 0],
+	// [0, 1, 1, 0, 1, 0, 1, 0],
+	[1, 0, 1, 0, 0, 1, 0, 1]];
+
+	// Generate a chosen rule
+	// Given a co-ordinate in a grid, calculate the value of the point
+	var ruleFactory = function ruleFactory(ruleIdx) {
+	  return function (i, j, grid) {
+	    var chosenRule = rules[ruleIdx];
+
+	    var mid = grid[i + 1][j];
+
+	    var isLeftEdge = j === 0;
+	    var left = isLeftEdge ? 0 : grid[i + 1][j - 1];
+
+	    var isRightEdge = j === grid[i + 1].length - 1;
+	    var right = isRightEdge ? 0 : grid[i + 1][j + 1];
+
+	    // Convert binary values (left, middle, right) to decimal array index
+	    var result = 4 * left + 2 * mid + 1 * right;
+	    return chosenRule[result];
+	  };
+	};
+
+	module.exports = {
+	  ruleFactory: ruleFactory,
+	  rules: rules
+	};
+
+/***/ }),
+/* 4 */
+/***/ (function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	var _colors = __webpack_require__(2);
+
+	var _colors2 = _interopRequireDefault(_colors);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	var WHITE = 'rgb(240, 240, 240)';
+	var BLACK = 'rgb(200, 200, 200)';
+	var LOOP_DELAY = 50; // ms
+	var NUM_ITERS = 3280; // 3**8 / 2 for some reason
+
+	var Sierpinski = function () {
+	  function Sierpinski() {
+	    _classCallCheck(this, Sierpinski);
+
+	    var canvas = document.getElementById('canvas');
+	    this.setSize(canvas);
+	    this.ctx = canvas.getContext('2d');
+	    this.queue = [];
+	    this.initColor = 2 * Math.PI * Math.random();
+	    this.counter = 0;
+	    // Push starting shape onto stack
+	    this.queue.push({
+	      x: this.initX, y: this.initY,
+	      width: this.width,
+	      height: this.height,
+	      depth: 0
+	    });
+	  }
+
+	  _createClass(Sierpinski, [{
+	    key: 'runLoop',
+	    value: function runLoop(resolve) {
+	      var _this = this;
+
+	      var triangle = this.queue.shift();
+	      this.drawTriangle(triangle);
+	      this.pushChildren(triangle);
+	      this.counter++;
+	      if (this.counter >= NUM_ITERS) {
+	        resolve();
+	      } else {
+	        setTimeout(function () {
+	          return _this.runLoop(resolve);
+	        }, LOOP_DELAY / triangle.depth);
+	      }
+	    }
+	  }, {
+	    key: 'setSize',
+	    value: function setSize(canvas) {
+	      canvas.width = window.innerWidth;
+	      canvas.height = window.innerHeight;
+
+	      var heightToWidth = 1 / Math.tan(Math.PI / 5);
+	      var sizeByWidth = 0.95 * window.innerWidth;
+	      var sizeByHeight = 0.95 * window.innerHeight * heightToWidth;
+	      var size = Math.min(sizeByWidth, sizeByHeight);
+	      this.width = size;
+	      this.height = size / heightToWidth;
+
+	      // x and y reference triangle's bottom left corner
+	      this.initX = canvas.width / 2 - this.width / 2;
+	      this.initY = this.height + canvas.height / 2 - this.height / 2;
+	    }
+	  }, {
+	    key: 'pushChildren',
+	    value: function pushChildren(triangle) {
+	      // Bottom left triangle
+	      this.queue.push({
+	        x: triangle.x,
+	        y: triangle.y,
+	        width: triangle.width / 2,
+	        height: triangle.height / 2,
+	        depth: triangle.depth + 1
+	      });
+	      // Bottom right triangle
+	      this.queue.push({
+	        x: triangle.x + triangle.width / 2,
+	        y: triangle.y,
+	        width: triangle.width / 2,
+	        height: triangle.height / 2,
+	        depth: triangle.depth + 1
+	      });
+	      // Top triangle
+	      this.queue.push({
+	        x: triangle.x + triangle.width / 4,
+	        y: triangle.y - triangle.height / 2,
+	        width: triangle.width / 2,
+	        height: triangle.height / 2,
+	        depth: triangle.depth + 1
+	      });
+	    }
+	  }, {
+	    key: 'drawTriangle',
+	    value: function drawTriangle(triangle) {
+	      this.ctx.beginPath();
+	      this.ctx.fillStyle = this.getColor(triangle.depth);
+	      this.ctx.moveTo(triangle.x, triangle.y);
+	      this.ctx.lineTo(triangle.x + triangle.width, triangle.y);
+	      this.ctx.lineTo(triangle.x + triangle.width / 2, triangle.y - triangle.height);
+	      this.ctx.closePath();
+	      this.ctx.fill();
+	    }
+	  }, {
+	    key: 'getColor',
+	    value: function getColor(depth) {
+	      // depth is 0 to 7
+	      this.colorWheel = new _colors2.default(this.initColor, 1, 1);
+	      var angle = (Math.pow(depth, 1.4) + depth) * (Math.PI / 10);
+	      this.colorWheel.rotate(angle);
+	      this.colorWheel.sat = 0.5 + depth / (7 * 2);
+	      return this.colorWheel.asCSS();
+	    }
+	  }], [{
+	    key: 'run',
+	    value: function run() {
+	      var sierpinski = new Sierpinski();
+	      return new Promise(function (resolve) {
+	        return sierpinski.runLoop(resolve);
+	      });
+	    }
+	  }]);
+
+	  return Sierpinski;
+	}();
+
+	exports.default = Sierpinski;
+
+/***/ }),
 /* 5 */
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -547,7 +544,7 @@
 
 	var _triangle2 = _interopRequireDefault(_triangle);
 
-	var _colors = __webpack_require__(4);
+	var _colors = __webpack_require__(2);
 
 	var _colors2 = _interopRequireDefault(_colors);
 
@@ -584,22 +581,13 @@
 
 	    var initColor = 2 * Math.PI * Math.random();
 	    this.colorWheel = new _colors2.default(initColor, 1, 1);
+	    this.counter = 0;
 	  }
 
 	  _createClass(Portal, [{
-	    key: 'run',
-	    value: function run() {
-	      var _this = this;
-
-	      this.counter = 0;
-	      return new Promise(function (resolve) {
-	        return _this.runLoop(resolve);
-	      });
-	    }
-	  }, {
 	    key: 'runLoop',
-	    value: function runLoop(resolve) {
-	      var _this2 = this;
+	    value: function runLoop(resolve, cancel) {
+	      var _this = this;
 
 	      var preRender = this.triangles.length < INIT_COUNT;
 	      var _iteratorNormalCompletion = true;
@@ -653,18 +641,20 @@
 	      this.counter++;
 	      if (this.counter >= NUM_ITERS) {
 	        this.finish(resolve);
+	      } else if (cancel) {
+	        resolve();
 	      } else if (preRender) {
 	        this.runLoop(resolve);
 	      } else {
 	        setTimeout(function () {
-	          return _this2.runLoop(resolve);
+	          return _this.runLoop(resolve);
 	        }, LOOP_DELAY);
 	      }
 	    }
 	  }, {
 	    key: 'finish',
 	    value: function finish(resolve) {
-	      var _this3 = this;
+	      var _this2 = this;
 
 	      this.counter++;
 	      var _iteratorNormalCompletion2 = true;
@@ -701,7 +691,7 @@
 	        }
 	      }
 	      setTimeout(function () {
-	        return _this3.finish(resolve);
+	        return _this2.finish(resolve);
 	      }, LOOP_DELAY);
 	    }
 	  }, {
@@ -745,6 +735,14 @@
 	      this.colorWheel.val = this.periodic(scalar / 1200, 1);
 	      this.colorWheel.sat = this.periodic(1 - scalar / 800, 1);
 	      return this.colorWheel.asCSS();
+	    }
+	  }], [{
+	    key: 'run',
+	    value: function run(cancel) {
+	      var portal = new Portal();
+	      return new Promise(function (resolve) {
+	        return portal.runLoop(resolve, cancel);
+	      });
 	    }
 	  }]);
 
@@ -881,6 +879,93 @@
 	}();
 
 	exports.default = RadialShape;
+
+/***/ }),
+/* 8 */
+/***/ (function(module, exports) {
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	var Navigator = function () {
+	  function Navigator() {
+	    var _this = this;
+
+	    _classCallCheck(this, Navigator);
+
+	    this.onHashChanged = function () {
+	      var chosenSlug = window.location.hash.slice(1);
+	      var isAlreadyRunning = chosenSlug === _this.lastAnimation;
+	      var slugFound = chosenSlug in _this.animations;
+	      if (isAlreadyRunning || !slugFound) {
+	        return;
+	      }
+
+	      // this.switchAnimations(chosenSlug)
+	    };
+
+	    this.animations = {};
+	    this.lastAnimation = null;
+	    this.cancel = false;
+	    window.onhashchange = this.onHashChanged;
+	  }
+
+	  _createClass(Navigator, [{
+	    key: "addAnimation",
+	    value: function addAnimation(slug, animation) {
+	      this.animations[slug] = animation;
+	    }
+	  }, {
+	    key: "navigateRandom",
+	    value: function navigateRandom() {
+	      var hash = window.location.hash.slice(1);
+	      var slug = void 0;
+	      if (hash in this.animations && !this.lastAnimation) {
+	        slug = hash;
+	      } else {
+	        slug = this.chooseRandomSlug();
+	      }
+
+	      this.lastAnimation = slug;
+	      window.location.hash = slug;
+	      this.cancel = false;
+	      return this.animations[slug].run(this.cancel);
+	    }
+	  }, {
+	    key: "chooseRandomSlug",
+	    value: function chooseRandomSlug() {
+	      var slugs = Object.keys(this.animations);
+	      var slug = void 0;
+	      while (true) {
+	        var randomIdx = Math.floor(Math.random() * slugs.length);
+	        slug = slugs[randomIdx];
+	        if (slugs.length <= 1 || slug !== this.lastAnimation) {
+	          break;
+	        }
+	      }
+	      return slug;
+	    }
+	  }, {
+	    key: "switchAnimations",
+	    value: function switchAnimations() {
+	      this.cancel = true;
+	      while (this.cancel) {
+	        // burn CPU cycles
+	      }
+	    }
+	  }]);
+
+	  return Navigator;
+	}();
+
+	exports.default = Navigator;
 
 /***/ })
 /******/ ]);

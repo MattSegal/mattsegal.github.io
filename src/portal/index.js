@@ -24,14 +24,15 @@ export default class Portal {
     
     const initColor = 2 * Math.PI * Math.random()
     this.colorWheel = new ColorWheel(initColor, 1, 1)
-  }
-
-  run() {
     this.counter = 0
-    return new Promise(resolve => this.runLoop(resolve))
   }
 
-  runLoop(resolve) {
+  static run(cancel) {
+    const portal = new Portal()
+    return new Promise(resolve => portal.runLoop(resolve, cancel))
+  }
+
+  runLoop(resolve, cancel) {
     const preRender = this.triangles.length < INIT_COUNT
     for (let triangle of this.triangles) {
       if (!preRender) {
@@ -62,6 +63,8 @@ export default class Portal {
     this.counter++
     if (this.counter >= NUM_ITERS) {
       this.finish(resolve)
+    } else if (cancel) {
+      resolve()
     } else if (preRender) {
       this.runLoop(resolve)
     } else {
