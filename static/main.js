@@ -69,13 +69,58 @@
 	nav.addAnimation('sierpinski', _recursive2.default);
 	nav.addAnimation('portal', _portal2.default);
 
-	// Draw random animations forever
-	var loop = function loop() {
-	  nav.navigateRandom().then(loop);
+	// Draw animations forever
+	nav.init();
+
+	// Setup UI events
+	var navbarButton = document.getElementById('navbar-btn');
+	var hideButton = document.getElementById('hide-btn');
+	var navbar = document.getElementById('navbar');
+	var content = document.getElementById('content');
+
+	var onNavbarButtonClick = function onNavbarButtonClick() {
+	  if (navbar.classList.contains('hidden')) {
+	    navbar.classList.remove('hidden');
+	  } else {
+	    navbar.classList.add('hidden');
+	  }
 	};
 
-	// Run script
-	loop();
+	var onHideButtonClick = function onHideButtonClick() {
+	  if (content.classList.contains('hidden')) {
+	    content.classList.remove('hidden');
+	  } else {
+	    content.classList.add('hidden');
+	  }
+	};
+
+	var _iteratorNormalCompletion = true;
+	var _didIteratorError = false;
+	var _iteratorError = undefined;
+
+	try {
+	  for (var _iterator = navbar.children[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+	    var child = _step.value;
+
+	    child.onclick = onNavbarButtonClick;
+	  }
+	} catch (err) {
+	  _didIteratorError = true;
+	  _iteratorError = err;
+	} finally {
+	  try {
+	    if (!_iteratorNormalCompletion && _iterator.return) {
+	      _iterator.return();
+	    }
+	  } finally {
+	    if (_didIteratorError) {
+	      throw _iteratorError;
+	    }
+	  }
+	}
+
+	navbarButton.onclick = onNavbarButtonClick;
+	hideButton.onclick = onHideButtonClick;
 
 /***/ }),
 /* 1 */
@@ -114,9 +159,10 @@
 	// Draws the given automata to the screen, row-by-row
 
 	var Automata = function () {
-	  function Automata(rule, scale, seed) {
+	  function Automata(rule, scale, seed, token) {
 	    _classCallCheck(this, Automata);
 
+	    this.token = token;
 	    this.color = 2 * Math.PI * Math.random();
 	    this.scale = scale;
 	    this.rule = rule;
@@ -157,7 +203,7 @@
 
 	  _createClass(Automata, [{
 	    key: 'runLoop',
-	    value: function runLoop(resolve, cancel) {
+	    value: function runLoop(resolve, reject) {
 	      var _this = this;
 
 	      var top = this.top;
@@ -171,6 +217,14 @@
 
 	      // Render the automata, row-by-row, from the middle out
 	      var intervalId = setInterval(function () {
+	        // Confirm and bail if token is cancelled
+	        if (_this.token.isCancelling()) {
+	          clearInterval(intervalId);
+	          _this.token.finishCancel();
+	          reject('Automata animation cancelled by token');
+	          return;
+	        }
+
 	        // Calculate next rows
 	        _this.grid[top] = _this.grid[top].map(function (val, colIdx) {
 	          return _this.rule(top, colIdx, _this.grid);
@@ -187,14 +241,10 @@
 	        top--;
 	        bot++;
 
-	        if (cancel) {
-	          clearInterval(intervalId);
-	          resolve();
-	        }
-
 	        if (top === 0) {
 	          clearInterval(intervalId);
-	          setTimeout(resolve, END_DELAY);
+	          _this.waitTime = END_DELAY;
+	          _this.finishLoop(resolve, reject);
 	        }
 	      }, this.loop_delay);
 
@@ -203,6 +253,27 @@
 	        clearInterval(intervalId);
 	        resolve();
 	      }, false);
+	    }
+	  }, {
+	    key: 'finishLoop',
+	    value: function finishLoop(resolve, reject) {
+	      var _this2 = this;
+
+	      // Confirm and bail if token is cancelled
+	      if (this.token.isCancelling()) {
+	        this.token.finishCancel();
+	        reject('Automata animation cancelled by token');
+	        return;
+	      }
+
+	      this.waitTime -= 100;
+	      if (this.waitTime <= 0) {
+	        resolve();
+	      } else {
+	        setTimeout(function () {
+	          return _this2.finishLoop(resolve, reject);
+	        }, 100);
+	      }
 	    }
 
 	    // Draw the whole grid to the screen
@@ -243,14 +314,14 @@
 	    }
 	  }], [{
 	    key: 'run',
-	    value: function run(cancel) {
+	    value: function run(token) {
 	      var ruleIdx = Math.floor(Math.random() * _rules.rules.length);
 	      var scale = 2; //Math.ceil(Math.random() * MAX_SCALE)
 	      var seed = Math.random();
 	      var rule = (0, _rules.ruleFactory)(ruleIdx);
-	      var automata = new Automata(rule, scale, seed);
-	      return new Promise(function (resolve) {
-	        return automata.runLoop(resolve, cancel);
+	      var automata = new Automata(rule, scale, seed, token);
+	      return new Promise(function (resolve, reject) {
+	        return automata.runLoop(resolve, reject);
 	      });
 	    }
 	  }]);
@@ -412,9 +483,10 @@
 	var NUM_ITERS = 3280; // 3**8 / 2 for some reason
 
 	var Sierpinski = function () {
-	  function Sierpinski() {
+	  function Sierpinski(token) {
 	    _classCallCheck(this, Sierpinski);
 
+	    this.token = token;
 	    var canvas = document.getElementById('canvas');
 	    this.setSize(canvas);
 	    this.ctx = canvas.getContext('2d');
@@ -432,8 +504,15 @@
 
 	  _createClass(Sierpinski, [{
 	    key: 'runLoop',
-	    value: function runLoop(resolve) {
+	    value: function runLoop(resolve, reject) {
 	      var _this = this;
+
+	      // Confirm and bail if token is cancelled
+	      if (this.token.isCancelling()) {
+	        this.token.finishCancel();
+	        reject('Sierpinski animation cancelled by token');
+	        return;
+	      }
 
 	      var triangle = this.queue.shift();
 	      this.drawTriangle(triangle);
@@ -443,7 +522,7 @@
 	        resolve();
 	      } else {
 	        setTimeout(function () {
-	          return _this.runLoop(resolve);
+	          return _this.runLoop(resolve, reject);
 	        }, LOOP_DELAY / triangle.depth);
 	      }
 	    }
@@ -515,10 +594,10 @@
 	    }
 	  }], [{
 	    key: 'run',
-	    value: function run() {
-	      var sierpinski = new Sierpinski();
-	      return new Promise(function (resolve) {
-	        return sierpinski.runLoop(resolve);
+	    value: function run(token) {
+	      var sierpinski = new Sierpinski(token);
+	      return new Promise(function (resolve, reject) {
+	        return sierpinski.runLoop(resolve, reject);
 	      });
 	    }
 	  }]);
@@ -563,13 +642,14 @@
 	var INIT_ROTATION = RPS * (LOOP_DELAY / 1000) * (2 * Math.PI);
 
 	var Portal = function () {
-	  function Portal() {
+	  function Portal(token) {
 	    _classCallCheck(this, Portal);
 
 	    this.periodic = function (value, max) {
 	      return Math.abs(value % (2 * max) - max);
 	    };
 
+	    this.token = token;
 	    var canvas = document.getElementById('canvas');
 	    canvas.width = window.innerWidth;
 	    canvas.height = window.innerHeight;
@@ -586,8 +666,15 @@
 
 	  _createClass(Portal, [{
 	    key: 'runLoop',
-	    value: function runLoop(resolve, cancel) {
+	    value: function runLoop(resolve, reject) {
 	      var _this = this;
+
+	      // Confirm and bail if token is cancelled
+	      if (this.token.isCancelling()) {
+	        this.token.finishCancel();
+	        reject('Portal animation cancelled by token');
+	        return;
+	      }
 
 	      var preRender = this.triangles.length < INIT_COUNT;
 	      var _iteratorNormalCompletion = true;
@@ -640,21 +727,26 @@
 
 	      this.counter++;
 	      if (this.counter >= NUM_ITERS) {
-	        this.finish(resolve);
-	      } else if (cancel) {
-	        resolve();
+	        this.finish(resolve, reject);
 	      } else if (preRender) {
-	        this.runLoop(resolve);
+	        this.runLoop(resolve, reject);
 	      } else {
 	        setTimeout(function () {
-	          return _this.runLoop(resolve);
+	          return _this.runLoop(resolve, reject);
 	        }, LOOP_DELAY);
 	      }
 	    }
 	  }, {
 	    key: 'finish',
-	    value: function finish(resolve) {
+	    value: function finish(resolve, reject) {
 	      var _this2 = this;
+
+	      // Confirm and bail if token is cancelled
+	      if (this.token.isCancelling()) {
+	        this.token.finishCancel();
+	        reject('Portal animation cancelled by token');
+	        return;
+	      }
 
 	      this.counter++;
 	      var _iteratorNormalCompletion2 = true;
@@ -691,7 +783,7 @@
 	        }
 	      }
 	      setTimeout(function () {
-	        return _this2.finish(resolve);
+	        return _this2.finish(resolve, reject);
 	      }, LOOP_DELAY);
 	    }
 	  }, {
@@ -738,10 +830,10 @@
 	    }
 	  }], [{
 	    key: 'run',
-	    value: function run(cancel) {
-	      var portal = new Portal();
-	      return new Promise(function (resolve) {
-	        return portal.runLoop(resolve, cancel);
+	    value: function run(token) {
+	      var portal = new Portal(token);
+	      return new Promise(function (resolve, reject) {
+	        return portal.runLoop(resolve, reject);
 	      });
 	    }
 	  }]);
@@ -882,9 +974,9 @@
 
 /***/ }),
 /* 8 */
-/***/ (function(module, exports) {
+/***/ (function(module, exports, __webpack_require__) {
 
-	"use strict";
+	'use strict';
 
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
@@ -892,7 +984,15 @@
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
+	var _token = __webpack_require__(9);
+
+	var _token2 = _interopRequireDefault(_token);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	var RANDOM_SLUG = 'random';
 
 	var Navigator = function () {
 	  function Navigator() {
@@ -903,43 +1003,63 @@
 	    this.onHashChanged = function () {
 	      var chosenSlug = window.location.hash.slice(1);
 	      var isAlreadyRunning = chosenSlug === _this.lastAnimation;
-	      var slugFound = chosenSlug in _this.animations;
-	      if (isAlreadyRunning || !slugFound) {
-	        return;
+	      var slugFound = chosenSlug in _this.animations || chosenSlug === RANDOM_SLUG;
+	      if (!isAlreadyRunning && slugFound) {
+	        _this.switchAnimation(chosenSlug);
 	      }
-
-	      // this.switchAnimations(chosenSlug)
 	    };
 
 	    this.animations = {};
 	    this.lastAnimation = null;
-	    this.cancel = false;
+	    this.token = new _token2.default(false);
 	    window.onhashchange = this.onHashChanged;
 	  }
 
 	  _createClass(Navigator, [{
-	    key: "addAnimation",
+	    key: 'addAnimation',
 	    value: function addAnimation(slug, animation) {
 	      this.animations[slug] = animation;
 	    }
 	  }, {
-	    key: "navigateRandom",
-	    value: function navigateRandom() {
-	      var hash = window.location.hash.slice(1);
-	      var slug = void 0;
-	      if (hash in this.animations && !this.lastAnimation) {
-	        slug = hash;
+	    key: 'init',
+	    value: function init() {
+	      var initialSlug = window.location.hash.slice(1);
+	      if (initialSlug in this.animations) {
+	        this.loopAnimation(initialSlug);
 	      } else {
-	        slug = this.chooseRandomSlug();
+	        window.location.hash = RANDOM_SLUG;
+	        this.loopAnimation(RANDOM_SLUG);
 	      }
-
-	      this.lastAnimation = slug;
-	      window.location.hash = slug;
-	      this.cancel = false;
-	      return this.animations[slug].run(this.cancel);
 	    }
 	  }, {
-	    key: "chooseRandomSlug",
+	    key: 'loopAnimation',
+	    value: function loopAnimation(slug) {
+	      var _this2 = this;
+
+	      var chosenSlug = slug === RANDOM_SLUG ? this.chooseRandomSlug() : slug;
+
+	      this.token = new _token2.default();
+	      this.lastAnimation = chosenSlug;
+	      this.animations[chosenSlug].run(this.token).then(function () {
+	        return _this2.loopAnimation(chosenSlug);
+	      }).catch(console.warn);
+	    }
+	  }, {
+	    key: 'switchAnimation',
+	    value: function switchAnimation(slug) {
+	      var _this3 = this;
+
+	      this.token.startCancel();
+	      if (this.token.isCancelled()) {
+	        this.loopAnimation(slug);
+	      } else {
+	        setTimeout(function () {
+	          return _this3.switchAnimation(slug);
+	        }, 50);
+	      }
+	    }
+	  }, {
+	    key: 'chooseRandomSlug',
 	    value: function chooseRandomSlug() {
 	      var slugs = Object.keys(this.animations);
 	      var slug = void 0;
@@ -952,20 +1072,81 @@
 	      }
 	      return slug;
 	    }
-	  }, {
-	    key: "switchAnimations",
-	    value: function switchAnimations() {
-	      this.cancel = true;
-	      while (this.cancel) {
-	        // burn CPU cycles
-	      }
-	    }
 	  }]);
 
 	  return Navigator;
 	}();
 
 	exports.default = Navigator;
+
+/***/ }),
+/* 9 */
+/***/ (function(module, exports) {
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	/*
+	A token instance is passed to each animation so that we can
+	cancel it while it is running, and then run a different animation
+	*/
+
+	var STATE = {
+	  RUNNING: 1,
+	  CANCELLING: 2,
+	  CANCELLED: 3
+	};
+
+	var CancellationToken = function () {
+	  function CancellationToken() {
+	    var isRunning = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
+
+	    _classCallCheck(this, CancellationToken);
+
+	    if (isRunning) {
+	      this.state = STATE.RUNNING;
+	    } else {
+	      this.state = STATE.CANCELLED;
+	    }
+	  }
+
+	  _createClass(CancellationToken, [{
+	    key: "startCancel",
+	    value: function startCancel() {
+	      if (this.state === STATE.RUNNING) {
+	        this.state = STATE.CANCELLING;
+	      }
+	    }
+	  }, {
+	    key: "finishCancel",
+	    value: function finishCancel() {
+	      if (this.state === STATE.CANCELLING) {
+	        this.state = STATE.CANCELLED;
+	      }
+	    }
+	  }, {
+	    key: "isCancelling",
+	    value: function isCancelling() {
+	      return this.state === STATE.CANCELLING;
+	    }
+	  }, {
+	    key: "isCancelled",
+	    value: function isCancelled() {
+	      return this.state === STATE.CANCELLED;
+	    }
+	  }]);
+
+	  return CancellationToken;
+	}();
+
+	exports.default = CancellationToken;
 
 /***/ })
 /******/ ]);

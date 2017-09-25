@@ -15,7 +15,8 @@ const END_DELAY = 4000 // ms
 
 // Draws the given automata to the screen, row-by-row
 export default class Automata {
-  constructor(rule, scale, seed) {
+  constructor(rule, scale, seed, token) {
+    this.token = token
     this.color = 2 * Math.PI * Math.random()
     this.scale = scale
     this.rule = rule
@@ -56,16 +57,16 @@ export default class Automata {
     this.bot = bot
   }
 
-  static run(cancel) {
+  static run(token) {
     const ruleIdx = Math.floor(Math.random() * rules.length)
     const scale = 2 //Math.ceil(Math.random() * MAX_SCALE)
     const seed = Math.random()
     const rule = ruleFactory(ruleIdx)
-    const automata = new Automata(rule, scale, seed)
-    return new Promise(resolve => automata.runLoop(resolve, cancel))
+    const automata = new Automata(rule, scale, seed, token)
+    return new Promise((resolve, reject) => automata.runLoop(resolve, reject))
   }
 
-  runLoop(resolve, cancel) {
+  runLoop(resolve, reject) {
     let top = this.top
     let bot = this.bot
 
@@ -77,6 +78,14 @@ export default class Automata {
 
     // Render the automata, row-by-row, from the middle out
     const intervalId = setInterval(() => {
+      // Confirm and bail if token is cancelled
+      if (this.token.isCancelling()) {
+        clearInterval(intervalId)
+        this.token.finishCancel()
+        reject('Automata animation cancelled by token')
+        return
+      }
+
       // Calculate next rows
       this.grid[top] = this.grid[top].map((val, colIdx) => this.rule(top, colIdx, this.grid))
       let inverse = this.grid[top].map((val, colIdx) =>  1 - val)
@@ -89,14 +98,10 @@ export default class Automata {
       top--
       bot++
 
-      if (cancel) {
-        clearInterval(intervalId)
-        resolve()
-      }
-
       if (top === 0) {
         clearInterval(intervalId)
-        setTimeout(resolve, END_DELAY)
+        this.waitTime = END_DELAY
+        this.finishLoop(resolve, reject)
       }
     }, this.loop_delay)
 
@@ -105,6 +110,22 @@ export default class Automata {
         clearInterval(intervalId)
         resolve()
     }, false)
+  }
+
+  finishLoop(resolve, reject) {
+    // Confirm and bail if token is cancelled
+    if (this.token.isCancelling()) {
+      this.token.finishCancel()
+      reject('Automata animation cancelled by token')
+      return
+    }
+
+    this.waitTime -= 100
+    if (this.waitTime <= 0) {
+      resolve()
+    } else {
+      setTimeout(() => this.finishLoop(resolve, reject), 100)
+    }
   }
 
   // Draw the whole grid to the screen

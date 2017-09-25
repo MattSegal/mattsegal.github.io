@@ -1,8 +1,12 @@
+import CancellationToken from 'token'
+
+const RANDOM_SLUG = 'random'
+
 export default class Navigator {
   constructor() {
     this.animations = {}
     this.lastAnimation = null
-    this.cancel = false
+    this.token = new CancellationToken(false)
     window.onhashchange = this.onHashChanged
   }
 
@@ -10,19 +14,44 @@ export default class Navigator {
     this.animations[slug] = animation
   }
 
-  navigateRandom() {
-    let hash = window.location.hash.slice(1)
-    let slug
-    if (hash in this.animations && !this.lastAnimation) {
-      slug = hash
+  init() {
+    const initialSlug = window.location.hash.slice(1)
+    if (initialSlug in this.animations) {
+      this.loopAnimation(initialSlug)
     } else {
-      slug = this.chooseRandomSlug()
+      window.location.hash = RANDOM_SLUG
+      this.loopAnimation(RANDOM_SLUG)
     }
+  }
 
-    this.lastAnimation = slug
-    window.location.hash = slug
-    this.cancel = false
-    return this.animations[slug].run(this.cancel)
+  loopAnimation(slug) {
+    const chosenSlug = slug === RANDOM_SLUG
+      ? this.chooseRandomSlug()
+      : slug
+
+    this.token = new CancellationToken()
+    this.lastAnimation = chosenSlug
+    this.animations[chosenSlug].run(this.token)
+      .then(() => this.loopAnimation(chosenSlug))
+      .catch(console.warn)
+  }
+
+  onHashChanged = () => {
+    const chosenSlug = window.location.hash.slice(1)
+    const isAlreadyRunning = chosenSlug === this.lastAnimation
+    const slugFound = chosenSlug in this.animations || chosenSlug === RANDOM_SLUG
+    if (!isAlreadyRunning && slugFound ) {
+      this.switchAnimation(chosenSlug)
+    }
+  }
+
+  switchAnimation(slug) {
+      this.token.startCancel()
+      if (this.token.isCancelled()) {
+        this.loopAnimation(slug)
+      } else {
+        setTimeout(() => this.switchAnimation(slug), 50)
+      }
   }
 
   chooseRandomSlug() {
@@ -36,23 +65,5 @@ export default class Navigator {
       }
     }
     return slug
-  }
-
-  onHashChanged = () => {
-    const chosenSlug = window.location.hash.slice(1)
-    const isAlreadyRunning = chosenSlug === this.lastAnimation
-    const slugFound = chosenSlug in this.animations
-    if (isAlreadyRunning || !slugFound) {
-      return
-    }
-
-    // this.switchAnimations(chosenSlug)
-  }
-
-  switchAnimations() {
-      this.cancel = true
-      while (this.cancel) {
-        // burn CPU cycles
-      }
   }
 }

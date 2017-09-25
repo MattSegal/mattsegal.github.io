@@ -12,7 +12,8 @@ const INIT_COUNT = 18
 const INIT_ROTATION = RPS * (LOOP_DELAY / 1000) * (2 * Math.PI)
 
 export default class Portal {
-  constructor() {
+  constructor(token) {
+    this.token = token
     const canvas = document.getElementById('canvas')
     canvas.width  = window.innerWidth
     canvas.height = window.innerHeight    
@@ -27,12 +28,19 @@ export default class Portal {
     this.counter = 0
   }
 
-  static run(cancel) {
-    const portal = new Portal()
-    return new Promise(resolve => portal.runLoop(resolve, cancel))
+  static run(token) {
+    const portal = new Portal(token)
+    return new Promise((resolve, reject) => portal.runLoop(resolve, reject))
   }
 
-  runLoop(resolve, cancel) {
+  runLoop(resolve, reject) {
+    // Confirm and bail if token is cancelled
+    if (this.token.isCancelling()) {
+      this.token.finishCancel()
+      reject('Portal animation cancelled by token')
+      return
+    }
+
     const preRender = this.triangles.length < INIT_COUNT
     for (let triangle of this.triangles) {
       if (!preRender) {
@@ -62,17 +70,22 @@ export default class Portal {
 
     this.counter++
     if (this.counter >= NUM_ITERS) {
-      this.finish(resolve)
-    } else if (cancel) {
-      resolve()
+      this.finish(resolve, reject)
     } else if (preRender) {
-      this.runLoop(resolve)
+      this.runLoop(resolve, reject)
     } else {
-      setTimeout(() => this.runLoop(resolve), LOOP_DELAY)
+      setTimeout(() => this.runLoop(resolve, reject), LOOP_DELAY)
     }
   }
 
-  finish(resolve) {
+  finish(resolve, reject) {
+    // Confirm and bail if token is cancelled
+    if (this.token.isCancelling()) {
+      this.token.finishCancel()
+      reject('Portal animation cancelled by token')
+      return
+    }
+
     this.counter++
     for (let triangle of this.triangles) {
       this.drawShape(triangle)
@@ -86,7 +99,7 @@ export default class Portal {
         return resolve()
       }
     } 
-    setTimeout(() => this.finish(resolve), LOOP_DELAY)
+    setTimeout(() => this.finish(resolve, reject), LOOP_DELAY)
   }
 
   drawShape(shape) {

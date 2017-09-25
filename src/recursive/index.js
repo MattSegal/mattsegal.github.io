@@ -5,7 +5,8 @@ const NUM_ITERS = 3280 // 3**8 / 2 for some reason
 import ColorWheel from 'colors'
 
 export default class Sierpinski {
-  constructor() {
+  constructor(token) {
+    this.token = token
     const canvas = document.getElementById('canvas')
     this.setSize(canvas)
     this.ctx = canvas.getContext('2d')
@@ -21,13 +22,20 @@ export default class Sierpinski {
     })
   }
 
-  static run() {
-    const sierpinski = new Sierpinski()
-    return new Promise(resolve => sierpinski.runLoop(resolve))
+  static run(token) {
+    const sierpinski = new Sierpinski(token)
+    return new Promise((resolve, reject) => sierpinski.runLoop(resolve, reject))
   }
 
 
-  runLoop(resolve) {
+  runLoop(resolve, reject) {
+    // Confirm and bail if token is cancelled
+    if (this.token.isCancelling()) {
+      this.token.finishCancel()
+      reject('Sierpinski animation cancelled by token')
+      return
+    }
+
     const triangle = this.queue.shift()
     this.drawTriangle(triangle)
     this.pushChildren(triangle)
@@ -35,7 +43,7 @@ export default class Sierpinski {
     if (this.counter >= NUM_ITERS) {
       resolve()
     } else {
-      setTimeout(() => this.runLoop(resolve), LOOP_DELAY / triangle.depth)
+      setTimeout(() => this.runLoop(resolve, reject), LOOP_DELAY / triangle.depth)
     }
   }
 
