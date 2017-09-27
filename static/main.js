@@ -1036,7 +1036,8 @@
 	    value: function loopAnimation(slug) {
 	      var _this2 = this;
 
-	      var chosenSlug = slug === RANDOM_SLUG ? this.chooseRandomSlug() : slug;
+	      var isRandom = window.location.hash.slice(1) === RANDOM_SLUG;
+	      var chosenSlug = isRandom ? this.chooseRandomSlug() : slug;
 
 	      this.token = new _token2.default();
 	      this.lastAnimation = chosenSlug;

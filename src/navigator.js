@@ -25,7 +25,8 @@ export default class Navigator {
   }
 
   loopAnimation(slug) {
-    const chosenSlug = slug === RANDOM_SLUG
+    const isRandom =  window.location.hash.slice(1) === RANDOM_SLUG
+    const chosenSlug = isRandom
       ? this.chooseRandomSlug()
       : slug
 
