@@ -1,8 +1,7 @@
-const WHITE = 'rgb(240, 240, 240)'
-const BLACK = 'rgb(200, 200, 200)'
+import ColorWheel from 'colors'
+
 const LOOP_DELAY = 50 // ms
 const NUM_ITERS = 3280 // 3**8 / 2 for some reason
-import ColorWheel from 'colors'
 
 export default class Sierpinski {
   constructor(token) {

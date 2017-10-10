@@ -50,15 +50,19 @@
 
 	var _automata2 = _interopRequireDefault(_automata);
 
-	var _recursive = __webpack_require__(4);
+	var _sierpinski = __webpack_require__(4);
 
-	var _recursive2 = _interopRequireDefault(_recursive);
+	var _sierpinski2 = _interopRequireDefault(_sierpinski);
 
 	var _portal = __webpack_require__(5);
 
 	var _portal2 = _interopRequireDefault(_portal);
 
-	var _navigator = __webpack_require__(8);
+	var _tree = __webpack_require__(8);
+
+	var _tree2 = _interopRequireDefault(_tree);
+
+	var _navigator = __webpack_require__(9);
 
 	var _navigator2 = _interopRequireDefault(_navigator);
 
@@ -66,8 +70,9 @@
 
 	var nav = new _navigator2.default();
 	nav.addAnimation('automata', _automata2.default);
-	nav.addAnimation('sierpinski', _recursive2.default);
+	nav.addAnimation('sierpinski', _sierpinski2.default);
 	nav.addAnimation('portal', _portal2.default);
+	nav.addAnimation('tree', _tree2.default);
 
 	// Draw animations forever
 	nav.init();
@@ -477,8 +482,6 @@
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-	var WHITE = 'rgb(240, 240, 240)';
-	var BLACK = 'rgb(200, 200, 200)';
 	var LOOP_DELAY = 50; // ms
 	var NUM_ITERS = 3280; // 3**8 / 2 for some reason
 
@@ -984,7 +987,159 @@
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-	var _token = __webpack_require__(9);
+	var _colors = __webpack_require__(2);
+
+	var _colors2 = _interopRequireDefault(_colors);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	var LOOP_DELAY = 50; // ms
+	var MAX_DEPTH = 6;
+
+	var Tree = function () {
+	  function Tree(token) {
+	    _classCallCheck(this, Tree);
+
+	    this.token = token;
+	    var canvas = document.getElementById('canvas');
+	    this.setSize(canvas);
+	    this.ctx = canvas.getContext('2d');
+	    this.queue = [];
+	    this.initColor = 2 * Math.PI * Math.random();
+	    this.counter = 0;
+	    // Push starting branch onto stack/queue (it functions as both)
+	    this.maxDepth = 0;
+	    this.queue.push({
+	      x: this.initX, y: this.initY,
+	      length: this.initLength,
+	      angle: 0, // 0 is up, +ve counter-clockwise
+	      depth: 0
+	    });
+	  }
+
+	  _createClass(Tree, [{
+	    key: 'runLoop',
+	    value: function runLoop(resolve, reject) {
+	      var _this = this;
+
+	      // Confirm and bail if token is cancelled
+	      if (this.token.isCancelling()) {
+	        this.token.finishCancel();
+	        reject('Tree animation cancelled by token');
+	        return;
+	      }
+
+	      var isStack = Math.random() > 0.2;
+	      var branch = isStack ? this.queue.pop() : this.queue.shift();
+	      this.drawBranch(branch);
+	      this.pushChildren(branch, Math.random() > 0.5);
+	      this.counter++;
+	      if (this.queue.length === 0) {
+	        resolve();
+	      } else {
+	        setTimeout(function () {
+	          return _this.runLoop(resolve, reject);
+	        }, LOOP_DELAY / branch.depth);
+	      }
+	    }
+	  }, {
+	    key: 'setSize',
+	    value: function setSize(canvas) {
+	      canvas.width = window.innerWidth;
+	      canvas.height = window.innerHeight;
+
+	      var heightToWidth = 1 / Math.tan(Math.PI / 5);
+	      var sizeByWidth = 0.95 * window.innerWidth;
+	      var sizeByHeight = 0.95 * window.innerHeight * heightToWidth;
+	      var size = Math.min(sizeByWidth, sizeByHeight);
+	      this.width = size;
+	      this.height = size / heightToWidth;
+
+	      // x and y reference start point of the tree's root
+	      this.initX = canvas.width / 2;
+	      this.initY = this.height + canvas.height / 2 - this.height / 2;
+	      this.initLength = this.height / 3;
+	    }
+	  }, {
+	    key: 'pushChildren',
+	    value: function pushChildren(branch, isRight) {
+	      // isLeft controls whether we push to the left or righthand side 1st 
+	      if (branch.depth === MAX_DEPTH) {
+	        return;
+	      }
+	      this.maxDepth = Math.max(this.maxDepth, branch.depth + 1);
+	      var numBranches = Math.min(Math.max(branch.depth + 3, 2), 5);
+	      for (var i = 0; i < numBranches; i++) {
+	        this.queue.push({
+	          x: this.getEndX(branch),
+	          y: this.getEndY(branch),
+	          length: 2 * branch.length / 3,
+	          angle: isRight ? branch.angle + Math.PI / 2 - (i + 1) * Math.PI / (numBranches + 1) : branch.angle - Math.PI / 2 + (i + 1) * Math.PI / (numBranches + 1),
+	          depth: branch.depth + 1
+	        });
+	      }
+	    }
+	  }, {
+	    key: 'drawBranch',
+	    value: function drawBranch(branch) {
+	      this.ctx.lineCap = 'round';
+
+	      this.ctx.lineWidth = branch.depth ? 10 / Math.pow(branch.depth, 1.2) : 20;
+	      this.ctx.strokeStyle = this.getColor(branch.depth);
+	      this.ctx.beginPath();
+	      this.ctx.moveTo(branch.x, branch.y);
+	      this.ctx.lineTo(this.getEndX(branch), this.getEndY(branch));
+	      this.ctx.stroke();
+	    }
+	  }, {
+	    key: 'getEndX',
+	    value: function getEndX(branch) {
+	      return branch.x + branch.length * Math.sin(branch.angle);
+	    }
+	  }, {
+	    key: 'getEndY',
+	    value: function getEndY(branch) {
+	      return branch.y - branch.length * Math.cos(branch.angle);
+	    }
+	  }, {
+	    key: 'getColor',
+	    value: function getColor(depth) {
+	      this.colorWheel = new _colors2.default(this.initColor, 1, 1);
+	      this.colorWheel.val = 0.3 + 0.6 * (depth / MAX_DEPTH);
+	      this.colorWheel.sat = 1 - 0.8 * (depth / MAX_DEPTH);
+	      this.colorWheel.rotate(depth * Math.PI / 8);
+	      return this.colorWheel.asCSS();
+	    }
+	  }], [{
+	    key: 'run',
+	    value: function run(token) {
+	      var tree = new Tree(token);
+	      return new Promise(function (resolve, reject) {
+	        return tree.runLoop(resolve, reject);
+	      });
+	    }
+	  }]);
+
+	  return Tree;
+	}();
+
+	exports.default = Tree;
+
+/***/ }),
+/* 9 */
+/***/ (function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	var _token = __webpack_require__(10);
 
 	var _token2 = _interopRequireDefault(_token);
 
@@ -1081,7 +1236,7 @@
 	exports.default = Navigator;
 
 /***/ }),
-/* 9 */
+/* 10 */
 /***/ (function(module, exports) {
 
 	"use strict";

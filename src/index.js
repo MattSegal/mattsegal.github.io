@@ -1,13 +1,15 @@
 'use strict'
 import Automata from 'automata'
-import Sierpinski from 'recursive'
+import Sierpinski from 'sierpinski'
 import Portal from 'portal'
+import Tree from 'tree'
 import Navigator from 'navigator'
 
 const nav = new Navigator()
 nav.addAnimation('automata', Automata)
 nav.addAnimation('sierpinski', Sierpinski)
 nav.addAnimation('portal', Portal)
+nav.addAnimation('tree', Tree)
 
 // Draw animations forever
 nav.init()
