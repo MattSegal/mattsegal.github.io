@@ -66,6 +66,10 @@
 
 	var _navigator2 = _interopRequireDefault(_navigator);
 
+	var _life = __webpack_require__(11);
+
+	var _life2 = _interopRequireDefault(_life);
+
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	var nav = new _navigator2.default();
@@ -73,6 +77,8 @@
 	nav.addAnimation('sierpinski', _sierpinski2.default);
 	nav.addAnimation('portal', _portal2.default);
 	nav.addAnimation('tree', _tree2.default);
+	nav.addAnimation('life', _life2.default);
+	nav.setDefault('life');
 
 	// Draw animations forever
 	nav.init();
@@ -1150,7 +1156,7 @@
 	var RANDOM_SLUG = 'random';
 
 	var Navigator = function () {
-	  function Navigator() {
+	  function Navigator(defaultSlug) {
 	    var _this = this;
 
 	    _classCallCheck(this, Navigator);
@@ -1164,6 +1170,7 @@
 	      }
 	    };
 
+	    this.defaultSlug = RANDOM_SLUG;
 	    this.animations = {};
 	    this.lastAnimation = null;
 	    this.token = new _token2.default(false);
@@ -1171,6 +1178,11 @@
 	  }
 
 	  _createClass(Navigator, [{
+	    key: 'setDefault',
+	    value: function setDefault(slug) {
+	      this.defaultSlug = slug;
+	    }
+	  }, {
 	    key: 'addAnimation',
 	    value: function addAnimation(slug, animation) {
 	      this.animations[slug] = animation;
@@ -1182,8 +1194,8 @@
 	      if (initialSlug in this.animations) {
 	        this.loopAnimation(initialSlug);
 	      } else {
-	        window.location.hash = RANDOM_SLUG;
-	        this.loopAnimation(RANDOM_SLUG);
+	        window.location.hash = this.defaultSlug;
+	        this.loopAnimation(this.defaultSlug);
 	      }
 	    }
 	  }, {
@@ -1303,6 +1315,158 @@
 	}();
 
 	exports.default = CancellationToken;
+
+/***/ }),
+/* 11 */
+/***/ (function(module, exports) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	/*
+	* Game of life simulator
+	*
+	* Game occupies a grid with co-ordinates (0, 0) in top left
+	*
+	*
+	*/
+	var WHITE = 'rgb(240, 240, 240)';
+	var BLACK = 'rgb(150, 150, 150)';
+	var LOOP_DELAY = 60; // ms
+	var CELL_LENGTH = 15; // px
+
+	var GameOfLife = function () {
+	  function GameOfLife(token) {
+	    var _this = this;
+
+	    _classCallCheck(this, GameOfLife);
+
+	    this.handleMouseMove = function (e) {
+	      // Record mouse moves
+	      _this.mouseCells.push([Math.floor(e.clientY / CELL_LENGTH), Math.floor(e.clientX / CELL_LENGTH)]);
+	    };
+
+	    this.token = token;
+
+	    // Setup canvas
+	    var canvas = document.getElementById('canvas');
+	    this.ctx = canvas.getContext('2d');
+
+	    // Set dimensions
+	    this.width = window.innerWidth;
+	    this.height = window.innerHeight;
+	    canvas.width = this.width;
+	    canvas.height = this.height;
+
+	    // Build grid
+	    this.numRows = Math.ceil(this.height / CELL_LENGTH);
+	    this.numCols = Math.ceil(this.width / CELL_LENGTH);
+	    this.grid = Array(this.numRows).fill(0).map(function (row) {
+	      return Array(_this.numCols).fill(Math.round(Math.random()));
+	    });
+
+	    this.mouseCells = [];
+
+	    // Settle the grid a bit
+	    for (var i = 0; i < 50; i++) {
+	      this.progressGame();
+	    }
+
+	    document.onmousemove = this.handleMouseMove;
+	  }
+
+	  _createClass(GameOfLife, [{
+	    key: 'runLoop',
+	    value: function runLoop(resolve, reject) {
+	      var _this2 = this;
+
+	      // Confirm and bail if token is cancelled
+	      if (this.token.isCancelling()) {
+	        this.token.finishCancel();
+	        reject('Game of life animation cancelled by token');
+	        return;
+	      }
+	      this.renderGrid();
+	      this.progressGame();
+	      setTimeout(function () {
+	        return _this2.runLoop(resolve, reject);
+	      }, LOOP_DELAY);
+	    }
+	  }, {
+	    key: 'progressGame',
+	    value: function progressGame() {
+	      var _this3 = this;
+
+	      // Progress the game according to the GOL rules
+	      var nextGrid = Array(this.numRows).fill(0).map(function (row) {
+	        return Array(_this3.numCols).fill(0);
+	      });
+	      for (var rowIdx = 0; rowIdx < this.grid.length; rowIdx++) {
+	        for (var colIdx = 0; colIdx < this.grid[rowIdx].length; colIdx++) {
+	          var numNeighbours = this.countNeighbours(rowIdx, colIdx);
+	          var liveCellSurvives = this.grid[rowIdx][colIdx] === 1 && (numNeighbours === 2 || numNeighbours === 3);
+	          var deadCellLives = this.grid[rowIdx][colIdx] === 0 && numNeighbours === 3;
+	          if (liveCellSurvives || deadCellLives) {
+	            nextGrid[rowIdx][colIdx] = 1;
+	          }
+	        }
+	      }
+
+	      // Add new cells created by mouse movement
+	      var numCells = this.mouseCells.length;
+	      for (var count = 0; count < numCells; count++) {
+	        var cell = this.mouseCells.shift();
+	        nextGrid[cell[0]][cell[1]] = 1;
+	      }
+	      this.grid = nextGrid;
+	    }
+	  }, {
+	    key: 'countNeighbours',
+	    value: function countNeighbours(rowIdx, colIdx) {
+	      // Counts the number of living neighbors for a cell
+	      var numNeighbours = 0;
+	      for (var i = -1; i < 2; i++) {
+	        for (var j = -1; j < 2; j++) {
+	          if (rowIdx + i > -1 && colIdx + j > -1 && rowIdx + i < this.numRows && colIdx + j < this.numCols && !(i === 0 && j === 0)) {
+	            numNeighbours += this.grid[rowIdx + i][colIdx + j];
+	          }
+	        }
+	      }
+	      return numNeighbours;
+	    }
+	  }, {
+	    key: 'renderGrid',
+	    value: function renderGrid() {
+	      // Render every grid element
+	      for (var rowIdx = 0; rowIdx < this.grid.length; rowIdx++) {
+	        for (var colIdx = 0; colIdx < this.grid[rowIdx].length; colIdx++) {
+	          this.ctx.fillStyle = this.grid[rowIdx][colIdx] ? BLACK : WHITE;
+	          this.ctx.fillRect(colIdx * CELL_LENGTH, rowIdx * CELL_LENGTH, CELL_LENGTH, CELL_LENGTH);
+	        }
+	      }
+	    }
+	  }], [{
+	    key: 'run',
+	    value: function run(token) {
+	      // Start the game
+	      var game = new GameOfLife(token);
+	      return new Promise(function (resolve, reject) {
+	        return game.runLoop(resolve, reject);
+	      });
+	    }
+	  }]);
+
+	  return GameOfLife;
+	}();
+
+	exports.default = GameOfLife;
 
 /***/ })
 /******/ ]);

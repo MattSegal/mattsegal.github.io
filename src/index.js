@@ -4,12 +4,15 @@ import Sierpinski from 'sierpinski'
 import Portal from 'portal'
 import Tree from 'tree'
 import Navigator from 'navigator'
+import GameOfLife from 'life'
 
 const nav = new Navigator()
 nav.addAnimation('automata', Automata)
 nav.addAnimation('sierpinski', Sierpinski)
 nav.addAnimation('portal', Portal)
 nav.addAnimation('tree', Tree)
+nav.addAnimation('life', GameOfLife)
+nav.setDefault('life')
 
 // Draw animations forever
 nav.init()

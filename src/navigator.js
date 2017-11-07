@@ -3,11 +3,16 @@ import CancellationToken from 'token'
 const RANDOM_SLUG = 'random'
 
 export default class Navigator {
-  constructor() {
+  constructor(defaultSlug) {
+    this.defaultSlug = RANDOM_SLUG
     this.animations = {}
     this.lastAnimation = null
     this.token = new CancellationToken(false)
     window.onhashchange = this.onHashChanged
+  }
+
+  setDefault(slug) {
+    this.defaultSlug = slug
   }
 
   addAnimation(slug, animation) {
@@ -19,8 +24,8 @@ export default class Navigator {
     if (initialSlug in this.animations) {
       this.loopAnimation(initialSlug)
     } else {
-      window.location.hash = RANDOM_SLUG
-      this.loopAnimation(RANDOM_SLUG)
+      window.location.hash = this.defaultSlug
+      this.loopAnimation(this.defaultSlug)
     }
   }
 
