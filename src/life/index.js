@@ -6,7 +6,7 @@
 *
 */
 const WHITE = 'rgb(240, 240, 240)'
-const BLACK = 'rgb(150, 150, 150)'
+const BLACK = 'rgb(180, 180, 180)'
 const LOOP_DELAY = 60  // ms
 const CELL_LENGTH = 15  // px
 
@@ -33,7 +33,8 @@ export default class GameOfLife {
     this.mouseCells = []
 
     // Settle the grid a bit
-    for (let i = 0; i < 50; i++) {
+    const settleIters = Math.floor(this.width / 25)
+    for (let i = 0; i < settleIters; i++) {
       this.progressGame()
     }
 

@@ -190,9 +190,9 @@
 	    var top = this.middle;
 	    var bot = this.middle;
 
-	    // Initialise grid model - fill the top half with white, bottom half black
-	    var grid = Array(num_rows).fill(0).map(function (row, rowIdx) {
-	      return rowIdx > bot ? Array(num_cols).fill(0) : Array(num_cols).fill(0);
+	    // Initialise grid model
+	    var grid = Array(num_rows).fill(0).map(function (row) {
+	      return Array(num_cols).fill(0);
 	    });
 
 	    // Seed initial values at the start
@@ -1338,7 +1338,7 @@
 	*
 	*/
 	var WHITE = 'rgb(240, 240, 240)';
-	var BLACK = 'rgb(150, 150, 150)';
+	var BLACK = 'rgb(180, 180, 180)';
 	var LOOP_DELAY = 60; // ms
 	var CELL_LENGTH = 15; // px
 
@@ -1375,7 +1375,8 @@
 	    this.mouseCells = [];
 
 	    // Settle the grid a bit
-	    for (var i = 0; i < 50; i++) {
+	    var settleIters = Math.floor(this.width / 25);
+	    for (var i = 0; i < settleIters; i++) {
 	      this.progressGame();
 	    }
 
