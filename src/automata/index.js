@@ -33,12 +33,8 @@ export default class Automata {
     let top = this.middle
     let bot = this.middle
 
-    // Initialise grid model - fill the top half with white, bottom half black
-    const grid = Array(num_rows).fill(0)
-      .map((row, rowIdx) => rowIdx > bot
-        ? Array(num_cols).fill(0)
-        : Array(num_cols).fill(0)
-      )
+    // Initialise grid model
+    const grid = Array(num_rows).fill(0).map(row => Array(num_cols).fill(0))
 
     // Seed initial values at the start
     if (seed < 0.33) {
