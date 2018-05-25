@@ -12,7 +12,7 @@ nav.addAnimation('sierpinski', Sierpinski)
 nav.addAnimation('portal', Portal)
 nav.addAnimation('tree', Tree)
 nav.addAnimation('life', GameOfLife)
-nav.setDefault('life')
+nav.setDefault('automata')
 
 // Draw animations forever
 nav.init()

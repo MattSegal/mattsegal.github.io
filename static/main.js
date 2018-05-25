@@ -78,7 +78,7 @@
 	nav.addAnimation('portal', _portal2.default);
 	nav.addAnimation('tree', _tree2.default);
 	nav.addAnimation('life', _life2.default);
-	nav.setDefault('life');
+	nav.setDefault('automata');
 
 	// Draw animations forever
 	nav.init();
