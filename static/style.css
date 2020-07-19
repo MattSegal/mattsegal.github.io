@@ -39,7 +39,6 @@ canvas {
 }
 
 canvas {
-  outline: solid red 1px;
   z-index: -1;
   position: absolute;
   animation: rotating 600s linear infinite;
