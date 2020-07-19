@@ -137,7 +137,7 @@
 /* 1 */
 /***/ (function(module, exports, __webpack_require__) {
 
-	'use strict';
+	"use strict";
 
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
@@ -159,13 +159,12 @@
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-	var WHITE = 'rgb(240, 240, 240)';
-	var BLACK = 'rgb(120, 120, 120)';
+	var WHITE = "rgb(240, 240, 240)";
+	var BLACK = "rgb(120, 120, 120)";
 	var MAX_SCALE = 4;
 	var MIN_CELL_LENGTH = 1; // px
 	var MIN_LOOP_DELAY = 12; // ms
 	var END_DELAY = 4000; // ms
-
 
 	// Draws the given automata to the screen, row-by-row
 
@@ -177,10 +176,12 @@
 	    this.color = 2 * Math.PI * Math.random();
 	    this.scale = scale;
 	    this.rule = rule;
-	    var canvas = document.getElementById('canvas');
-	    canvas.width = window.innerWidth;
-	    canvas.height = window.innerHeight;
-	    this.ctx = canvas.getContext('2d');
+	    var canvas = document.getElementById("canvas");
+	    var size = Math.sqrt(Math.pow(window.innerWidth, 2) + Math.pow(window.innerHeight, 2));
+	    canvas.width = size;
+	    canvas.height = size;
+	    canvas.style.left = "calc(50% - " + size / 2 + "px)";
+	    this.ctx = canvas.getContext("2d");
 
 	    this.loop_delay = MIN_LOOP_DELAY * scale;
 	    this.cell_length = MIN_CELL_LENGTH * scale;
@@ -213,7 +214,7 @@
 	  }
 
 	  _createClass(Automata, [{
-	    key: 'runLoop',
+	    key: "runLoop",
 	    value: function runLoop(resolve, reject) {
 	      var _this = this;
 
@@ -232,7 +233,7 @@
 	        if (_this.token.isCancelling()) {
 	          clearInterval(intervalId);
 	          _this.token.finishCancel();
-	          reject('Automata animation cancelled by token');
+	          reject("Automata animation cancelled by token");
 	          return;
 	        }
 
@@ -260,20 +261,20 @@
 	      }, this.loop_delay);
 
 	      // Cancel on resizes
-	      window.addEventListener('resize', function () {
+	      window.addEventListener("resize", function () {
 	        clearInterval(intervalId);
 	        resolve();
 	      }, false);
 	    }
 	  }, {
-	    key: 'finishLoop',
+	    key: "finishLoop",
 	    value: function finishLoop(resolve, reject) {
 	      var _this2 = this;
 
 	      // Confirm and bail if token is cancelled
 	      if (this.token.isCancelling()) {
 	        this.token.finishCancel();
-	        reject('Automata animation cancelled by token');
+	        reject("Automata animation cancelled by token");
 	        return;
 	      }
 
@@ -290,7 +291,7 @@
 	    // Draw the whole grid to the screen
 
 	  }, {
-	    key: 'renderInit',
+	    key: "renderInit",
 	    value: function renderInit() {
 	      var c = this.cell_length;
 	      this.ctx.fillStyle = WHITE;
@@ -301,7 +302,7 @@
 	      }
 	    }
 	  }, {
-	    key: 'renderRow',
+	    key: "renderRow",
 	    value: function renderRow(row, i, isTop) {
 	      var c = this.cell_length;
 	      for (var j = 0; j < row.length; j++) {
@@ -312,7 +313,7 @@
 	      }
 	    }
 	  }, {
-	    key: 'getColor',
+	    key: "getColor",
 	    value: function getColor(i, isTop) {
 	      if (!isTop) {
 	        return BLACK;
@@ -324,7 +325,7 @@
 	      return colorWheel.asCSS();
 	    }
 	  }], [{
-	    key: 'run',
+	    key: "run",
 	    value: function run(token) {
 	      var ruleIdx = Math.floor(Math.random() * _rules.rules.length);
 	      var scale = 2; //Math.ceil(Math.random() * MAX_SCALE)
@@ -472,7 +473,7 @@
 /* 4 */
 /***/ (function(module, exports, __webpack_require__) {
 
-	'use strict';
+	"use strict";
 
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
@@ -496,15 +497,16 @@
 	    _classCallCheck(this, Sierpinski);
 
 	    this.token = token;
-	    var canvas = document.getElementById('canvas');
+	    var canvas = document.getElementById("canvas");
 	    this.setSize(canvas);
-	    this.ctx = canvas.getContext('2d');
+	    this.ctx = canvas.getContext("2d");
 	    this.queue = [];
 	    this.initColor = 2 * Math.PI * Math.random();
 	    this.counter = 0;
 	    // Push starting shape onto stack
 	    this.queue.push({
-	      x: this.initX, y: this.initY,
+	      x: this.initX,
+	      y: this.initY,
 	      width: this.width,
 	      height: this.height,
 	      depth: 0
@@ -512,14 +514,14 @@
 	  }
 
 	  _createClass(Sierpinski, [{
-	    key: 'runLoop',
+	    key: "runLoop",
 	    value: function runLoop(resolve, reject) {
 	      var _this = this;
 
 	      // Confirm and bail if token is cancelled
 	      if (this.token.isCancelling()) {
 	        this.token.finishCancel();
-	        reject('Sierpinski animation cancelled by token');
+	        reject("Sierpinski animation cancelled by token");
 	        return;
 	      }
 
@@ -536,10 +538,12 @@
 	      }
 	    }
 	  }, {
-	    key: 'setSize',
+	    key: "setSize",
 	    value: function setSize(canvas) {
-	      canvas.width = window.innerWidth;
-	      canvas.height = window.innerHeight;
+	      var hyp = Math.sqrt(Math.pow(window.innerWidth, 2) + Math.pow(window.innerHeight, 2));
+	      canvas.width = hyp;
+	      canvas.height = hyp;
+	      canvas.style.left = "calc(50% - " + hyp / 2 + "px)";
 
 	      var heightToWidth = 1 / Math.tan(Math.PI / 5);
 	      var sizeByWidth = 0.95 * window.innerWidth;
@@ -553,7 +557,7 @@
 	      this.initY = this.height + canvas.height / 2 - this.height / 2;
 	    }
 	  }, {
-	    key: 'pushChildren',
+	    key: "pushChildren",
 	    value: function pushChildren(triangle) {
 	      // Bottom left triangle
 	      this.queue.push({
@@ -581,7 +585,7 @@
 	      });
 	    }
 	  }, {
-	    key: 'drawTriangle',
+	    key: "drawTriangle",
 	    value: function drawTriangle(triangle) {
 	      this.ctx.beginPath();
 	      this.ctx.fillStyle = this.getColor(triangle.depth);
@@ -592,7 +596,7 @@
 	      this.ctx.fill();
 	    }
 	  }, {
-	    key: 'getColor',
+	    key: "getColor",
 	    value: function getColor(depth) {
 	      // depth is 0 to 7
 	      this.colorWheel = new _colors2.default(this.initColor, 1, 1);
@@ -602,7 +606,7 @@
 	      return this.colorWheel.asCSS();
 	    }
 	  }], [{
-	    key: 'run',
+	    key: "run",
 	    value: function run(token) {
 	      var sierpinski = new Sierpinski(token);
 	      return new Promise(function (resolve, reject) {
@@ -620,7 +624,7 @@
 /* 5 */
 /***/ (function(module, exports, __webpack_require__) {
 
-	'use strict';
+	"use strict";
 
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
@@ -659,10 +663,12 @@
 	    };
 
 	    this.token = token;
-	    var canvas = document.getElementById('canvas');
-	    canvas.width = window.innerWidth;
-	    canvas.height = window.innerHeight;
-	    this.ctx = canvas.getContext('2d');
+	    var canvas = document.getElementById("canvas");
+	    var size = Math.sqrt(Math.pow(window.innerWidth, 2) + Math.pow(window.innerHeight, 2));
+	    canvas.width = size;
+	    canvas.height = size;
+	    canvas.style.left = "calc(50% - " + size / 2 + "px)";
+	    this.ctx = canvas.getContext("2d");
 	    this.initX = canvas.width / 2;
 	    this.initY = canvas.height / 2;
 	    this.rotation = INIT_ROTATION;
@@ -674,14 +680,14 @@
 	  }
 
 	  _createClass(Portal, [{
-	    key: 'runLoop',
+	    key: "runLoop",
 	    value: function runLoop(resolve, reject) {
 	      var _this = this;
 
 	      // Confirm and bail if token is cancelled
 	      if (this.token.isCancelling()) {
 	        this.token.finishCancel();
-	        reject('Portal animation cancelled by token');
+	        reject("Portal animation cancelled by token");
 	        return;
 	      }
 
@@ -746,14 +752,14 @@
 	      }
 	    }
 	  }, {
-	    key: 'finish',
+	    key: "finish",
 	    value: function finish(resolve, reject) {
 	      var _this2 = this;
 
 	      // Confirm and bail if token is cancelled
 	      if (this.token.isCancelling()) {
 	        this.token.finishCancel();
-	        reject('Portal animation cancelled by token');
+	        reject("Portal animation cancelled by token");
 	        return;
 	      }
 
@@ -796,7 +802,7 @@
 	      }, LOOP_DELAY);
 	    }
 	  }, {
-	    key: 'drawShape',
+	    key: "drawShape",
 	    value: function drawShape(shape) {
 	      var points = shape.getPoints();
 	      this.ctx.beginPath();
@@ -831,14 +837,14 @@
 	      this.ctx.fill();
 	    }
 	  }, {
-	    key: 'getColor',
+	    key: "getColor",
 	    value: function getColor(scalar) {
 	      this.colorWheel.val = this.periodic(scalar / 1200, 1);
 	      this.colorWheel.sat = this.periodic(1 - scalar / 800, 1);
 	      return this.colorWheel.asCSS();
 	    }
 	  }], [{
-	    key: 'run',
+	    key: "run",
 	    value: function run(token) {
 	      var portal = new Portal(token);
 	      return new Promise(function (resolve, reject) {
@@ -985,7 +991,7 @@
 /* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
-	'use strict';
+	"use strict";
 
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
@@ -1009,16 +1015,17 @@
 	    _classCallCheck(this, Tree);
 
 	    this.token = token;
-	    var canvas = document.getElementById('canvas');
+	    var canvas = document.getElementById("canvas");
 	    this.setSize(canvas);
-	    this.ctx = canvas.getContext('2d');
+	    this.ctx = canvas.getContext("2d");
 	    this.queue = [];
 	    this.initColor = 2 * Math.PI * Math.random();
 	    this.counter = 0;
 	    // Push starting branch onto stack/queue (it functions as both)
 	    this.maxDepth = 0;
 	    this.queue.push({
-	      x: this.initX, y: this.initY,
+	      x: this.initX,
+	      y: this.initY,
 	      length: this.initLength,
 	      angle: 0, // 0 is up, +ve counter-clockwise
 	      depth: 0
@@ -1026,14 +1033,14 @@
 	  }
 
 	  _createClass(Tree, [{
-	    key: 'runLoop',
+	    key: "runLoop",
 	    value: function runLoop(resolve, reject) {
 	      var _this = this;
 
 	      // Confirm and bail if token is cancelled
 	      if (this.token.isCancelling()) {
 	        this.token.finishCancel();
-	        reject('Tree animation cancelled by token');
+	        reject("Tree animation cancelled by token");
 	        return;
 	      }
 
@@ -1051,10 +1058,12 @@
 	      }
 	    }
 	  }, {
-	    key: 'setSize',
+	    key: "setSize",
 	    value: function setSize(canvas) {
-	      canvas.width = window.innerWidth;
-	      canvas.height = window.innerHeight;
+	      var hyp = Math.sqrt(Math.pow(window.innerWidth, 2) + Math.pow(window.innerHeight, 2));
+	      canvas.width = hyp;
+	      canvas.height = hyp;
+	      canvas.style.left = "calc(50% - " + hyp / 2 + "px)";
 
 	      var heightToWidth = 1 / Math.tan(Math.PI / 5);
 	      var sizeByWidth = 0.95 * window.innerWidth;
@@ -1069,9 +1078,9 @@
 	      this.initLength = this.height / 3;
 	    }
 	  }, {
-	    key: 'pushChildren',
+	    key: "pushChildren",
 	    value: function pushChildren(branch, isRight) {
-	      // isLeft controls whether we push to the left or righthand side 1st 
+	      // isLeft controls whether we push to the left or righthand side 1st
 	      if (branch.depth === MAX_DEPTH) {
 	        return;
 	      }
@@ -1088,9 +1097,9 @@
 	      }
 	    }
 	  }, {
-	    key: 'drawBranch',
+	    key: "drawBranch",
 	    value: function drawBranch(branch) {
-	      this.ctx.lineCap = 'round';
+	      this.ctx.lineCap = "round";
 
 	      this.ctx.lineWidth = branch.depth ? 10 / Math.pow(branch.depth, 1.2) : 20;
 	      this.ctx.strokeStyle = this.getColor(branch.depth);
@@ -1100,17 +1109,17 @@
 	      this.ctx.stroke();
 	    }
 	  }, {
-	    key: 'getEndX',
+	    key: "getEndX",
 	    value: function getEndX(branch) {
 	      return branch.x + branch.length * Math.sin(branch.angle);
 	    }
 	  }, {
-	    key: 'getEndY',
+	    key: "getEndY",
 	    value: function getEndY(branch) {
 	      return branch.y - branch.length * Math.cos(branch.angle);
 	    }
 	  }, {
-	    key: 'getColor',
+	    key: "getColor",
 	    value: function getColor(depth) {
 	      this.colorWheel = new _colors2.default(this.initColor, 1, 1);
 	      this.colorWheel.val = 0.3 + 0.6 * (depth / MAX_DEPTH);
@@ -1119,7 +1128,7 @@
 	      return this.colorWheel.asCSS();
 	    }
 	  }], [{
-	    key: 'run',
+	    key: "run",
 	    value: function run(token) {
 	      var tree = new Tree(token);
 	      return new Promise(function (resolve, reject) {
@@ -1320,7 +1329,7 @@
 /* 11 */
 /***/ (function(module, exports) {
 
-	'use strict';
+	"use strict";
 
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
@@ -1331,14 +1340,14 @@
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 	/*
-	* Game of life simulator
-	*
-	* Game occupies a grid with co-ordinates (0, 0) in top left
-	*
-	*
-	*/
-	var WHITE = 'rgb(240, 240, 240)';
-	var BLACK = 'rgb(180, 180, 180)';
+	 * Game of life simulator
+	 *
+	 * Game occupies a grid with co-ordinates (0, 0) in top left
+	 *
+	 *
+	 */
+	var WHITE = "rgb(240, 240, 240)";
+	var BLACK = "rgb(180, 180, 180)";
 	var LOOP_DELAY = 60; // ms
 	var CELL_LENGTH = 15; // px
 
@@ -1356,14 +1365,16 @@
 	    this.token = token;
 
 	    // Setup canvas
-	    var canvas = document.getElementById('canvas');
-	    this.ctx = canvas.getContext('2d');
+	    var canvas = document.getElementById("canvas");
+	    this.ctx = canvas.getContext("2d");
 
 	    // Set dimensions
-	    this.width = window.innerWidth;
-	    this.height = window.innerHeight;
-	    canvas.width = this.width;
-	    canvas.height = this.height;
+	    var size = Math.sqrt(Math.pow(window.innerWidth, 2) + Math.pow(window.innerHeight, 2));
+	    this.width = size;
+	    this.height = size;
+	    canvas.width = size;
+	    canvas.height = size;
+	    canvas.style.left = "calc(50% - " + size / 2 + "px)";
 
 	    // Build grid
 	    this.numRows = Math.ceil(this.height / CELL_LENGTH);
@@ -1384,14 +1395,14 @@
 	  }
 
 	  _createClass(GameOfLife, [{
-	    key: 'runLoop',
+	    key: "runLoop",
 	    value: function runLoop(resolve, reject) {
 	      var _this2 = this;
 
 	      // Confirm and bail if token is cancelled
 	      if (this.token.isCancelling()) {
 	        this.token.finishCancel();
-	        reject('Game of life animation cancelled by token');
+	        reject("Game of life animation cancelled by token");
 	        return;
 	      }
 	      this.renderGrid();
@@ -1401,7 +1412,7 @@
 	      }, LOOP_DELAY);
 	    }
 	  }, {
-	    key: 'progressGame',
+	    key: "progressGame",
 	    value: function progressGame() {
 	      var _this3 = this;
 
@@ -1429,7 +1440,7 @@
 	      this.grid = nextGrid;
 	    }
 	  }, {
-	    key: 'countNeighbours',
+	    key: "countNeighbours",
 	    value: function countNeighbours(rowIdx, colIdx) {
 	      // Counts the number of living neighbors for a cell
 	      var numNeighbours = 0;
@@ -1443,7 +1454,7 @@
 	      return numNeighbours;
 	    }
 	  }, {
-	    key: 'renderGrid',
+	    key: "renderGrid",
 	    value: function renderGrid() {
 	      // Render every grid element
 	      for (var rowIdx = 0; rowIdx < this.grid.length; rowIdx++) {
@@ -1454,7 +1465,7 @@
 	      }
 	    }
 	  }], [{
-	    key: 'run',
+	    key: "run",
 	    value: function run(token) {
 	      // Start the game
 	      var game = new GameOfLife(token);
